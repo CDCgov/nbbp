@@ -1,0 +1,41 @@
+Package: nbbp
+Title: Stuttering chains simulations
+Version: 0.0.0.9000
+Authors@R:
+    c(
+        person("Scott", "Olesen", , "ulp7@cdc.gov", role = c("aut")),
+        person("Andrew", "Magee", , "rzg0@cdc.gov", role = c("aut", "cre"))
+    )
+Description: Inference and simulation for stuttering chains under a negative binomial branching process.
+License: Apache License (>= 2)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    dplyr,
+    methods,
+    Rcpp (>= 0.12.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.4.0),
+    tidyr,
+    withr
+Suggests:
+    ggplot2,
+    knitr,
+    purrr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Depends:
+    R (>= 4.1)
+LazyData: true
+Biarch: true
+LinkingTo:
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make

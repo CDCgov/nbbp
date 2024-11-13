@@ -1,0 +1,8 @@
+^.*\.Rproj$
+^.*\.Rproj\.user$
+^data-raw$
+\.lintr
+\.github
+\.secrets\.baseline
+\.pre-commit-config.yaml
+LICENSE
