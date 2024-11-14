@@ -1,0 +1,72 @@
+---
+title: "Default priors"
+output:
+  rmarkdown::html_vignette:
+    fig_width: 7
+    fig_height: 5
+vignette: >
+  %\VignetteIndexEntry{Default priors}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = F}
+library(knitr)
+knitr::opts_chunk$set(
+  out.extra = 'style="display:block; margin:auto;"'
+)
+```
+
+A LogNormal prior is placed on $R$, and a HalfNormal on $1 / \sqrt{k}$.
+The default prior on $R$ stipulates that $R$ is most likely between 1/2 and 2, while the default prior on $k$ puts equal amounts of mass in both the strongly-overdispersed $k < 1$ regime and the less-overdispersed $k \geq 1$ regime.
+Samples from this are available in the package data object `prior_predictive`, which we will use to visualize the priors.
+
+## Default prior on $R$
+```{r, echo=FALSE, message=FALSE}
+library(nbbp)
+library(ggplot2)
+data(prior_predictive)
+
+prior_predictive |>
+  ggplot(aes(x = r_eff, y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("R")
+```
+
+## Default prior on $k$
+
+The (implicit) default prior on $k$ has heavy tails, reflecting the prior's pull towards the Poisson regime of $k \to \infty$.
+Truncating to $k \leq 100$ for visualization purposes, the (conditional) prior is
+```{r, echo=FALSE, message=FALSE}
+prior_predictive |>
+  dplyr::filter(dispersion <= 10) |>
+  ggplot(aes(x = dispersion, y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("k")
+```
+
+## Default prior predictive offspring distribution
+```{r, echo=FALSE, message=FALSE}
+prior_predictive |>
+  ggplot(aes(x = offspring_count, y = after_stat(density))) +
+  geom_histogram(binwidth = 1) +
+  theme_minimal() +
+  xlab("# offspring")
+```
+
+## Default prior predictive chain size distribution
+
+The prior predictive distribution on chain sizes has two components.
+There is a `r {round(mean(is.infinite(prior_predictive$chain_size)), 2) * 100}`% chance of a non-extinct (infinite) chain (see the vignette "Advanced data" for more on this).
+Conditional on extinction (finite size), there are long tails, with a `r round(mean(prior_predictive$chain_size > 100), 2) * 100`% chance of a chain size above 100.
+Focusing in on chains of 100 or fewer for visualization, the (conditional) prior distribution is:
+```{r, echo=FALSE, message=FALSE}
+prior_predictive |>
+  dplyr::filter(chain_size <= 100) |>
+  ggplot(aes(x = chain_size, y = after_stat(density))) +
+  geom_histogram(binwidth = 1) +
+  theme_minimal() +
+  xlab("chain size")
+```

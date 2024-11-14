@@ -6,7 +6,6 @@
 \usage{
 compute_likelihood_surface(
   all_outbreaks,
-  model,
   r_grid,
   k_grid,
   censor_geq = rep(NA, length(all_outbreaks)),
@@ -15,8 +14,6 @@ compute_likelihood_surface(
 }
 \arguments{
 \item{all_outbreaks}{vector containing the size of each outbreak, including the index case}
-
-\item{model}{stan model compiled by compile_nbbp_homogenous}
 
 \item{r_grid}{vector of values of R at which the likelihood is to be evaluated.}
 

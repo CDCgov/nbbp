@@ -6,13 +6,20 @@
 
 ## Getting started
 
-The R package can be installed with `remotes::install_github("CDCGov/nbbp")`.
+The R package can be installed with `remotes::install_github("CDCGov/nbbp")`, to install just the package, or with `remotes::install_github("CDCGov/nbbp", build_vignettes = TRUE)` to install the package and build vignettes.
+
+If building the vignettes, after loading the package in R (`library("nbbp")`), the following vignettes will be available:
+
+- `vignette("nbbp")`: introduction to the package and inference when all chains are completely observed and extinct
+- `vignette("advanced_data")`: how to handle censored observations and very large (or non-extinct) chains
+- `vignette("default_priors")`: plots of default priors and prior predictive distributions
 
 ## Project Admin
 
 Andy Magee, PhD, (@afmagee42)
 
 ---
+
 ---
 
 ## General Disclaimer

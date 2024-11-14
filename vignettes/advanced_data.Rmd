@@ -1,0 +1,211 @@
+---
+title: "Advanced data"
+output:
+  rmarkdown::html_vignette:
+    fig_width: 7
+    fig_height: 5
+vignette: >
+  %\VignetteIndexEntry{Advanced data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = F}
+library(knitr)
+knitr::opts_chunk$set(
+  out.extra = 'style="display:block; margin:auto;"'
+)
+```
+
+In the first vignette, we considered only examples where we could observe every chain size exactly, both in theory and in practice.
+This is not always true.
+Some times we only consider chains that have at least some number of cases, and some times we only know that a chain was at least a given size.
+Our investigation of these topics will use data on outbreaks of the pneumonic plague reported by [Nishiura _et al._ (2012)](https://doi.org/10.1016/j.jtbi.2011.10.039).
+
+```{r plague data}
+library(nbbp)
+library(dplyr)
+library(ggplot2)
+data(pneumonic_plague)
+summary(pneumonic_plague)
+```
+
+## Conditioning on observable chain sizes
+
+Among the data, we see a number of relatively small chains, but no singletons.
+This is because when Nishiura _et al._ investigated outbreaks of the pneumonic plague they compiled data only on chains of at least 2 cases.
+
+In general, any particular dataset may include chains observed only of some sizes.
+Analyzing such data requires appropriately conditioning the likelihood.
+This is accomplished using the `condition_geq` argument, which specifies the minimum observation size _for each chain_ (allowing for a mix, if needed).
+For analyzing the pneumonic plague data, we need to set `condition_geq = rep(2, 19)`, indicating that all chains were counted only if they had at least 2 cases.
+One more wrinkle remains before analysis.
+
+## What if the chain didn't go extinct?
+
+We might also notice in that data that there is one very large chain of size 5009.
+This is not a stuttering chain.
+Nishiura _et al._ call it a major epidemic.
+We have two choices for how to appropriately handle this.
+Both amount to acknowledging that this chain did not go extinct due to any feature of the branching process model that this package uses, but differ in how they treat it.
+
+### Treat it as non-extinct
+
+We can simply declare that this chain did not go extinct.
+Mathematically this requires partitioning outcomes into exctinct and non-extinct chains and considering them separately.
+But in practice with `chainsR` this is done by declaring the size of a chain to be `Inf` (which is the package's shorthand for non-extinct).
+Note that this will force $R > 1$ because when $R < 1$ _every_ chain _must_ go extinct.
+
+```{r treat as inf, results=FALSE, warning=FALSE}
+pneumonic_plague_inf <- pneumonic_plague
+pneumonic_plague_inf[4] <- Inf
+
+fit_inf <- fit_nbbp_homogenous_bayes(
+  all_outbreaks = pneumonic_plague_inf,
+  condition_geq = rep(2, length(pneumonic_plague)),
+  seed = 42
+)
+```
+
+As always, first we inspect the MCMC.
+
+```{r plague inf mcmc}
+rstan::check_hmc_diagnostics(fit_inf)
+
+rstan::summary(fit_inf)$summary[, c("n_eff", "Rhat")]
+```
+
+We see a small number of divergent transitions, but things look good on the whole.
+
+Now we can look at what we estimated.
+
+```{r plague inf res}
+fit_inf
+```
+
+We can see that $R$ is inferred to be above one with probability 1.
+It is likely near 1, though.
+We see considerable uncertainty about $k$, as we did in the borealpox example.
+
+### Treat it as censored
+
+We can alternately declare that all we know is that chain was _at least_ as big as we saw.
+That is, it didn't go extinct under its own power at size 5009, but it might have at 5010, or 7500, or something else.
+This is accomplished using the `ccensor_geq` argument, which specifies the smallest possible size that _each chain_ (allowing for as many censored observations as needed), with `NA` meaning no censoring is applied.
+(This is significantly slower, so for demonstration purposes only, we run fewer and shorter chains here.)
+
+```{r treat as censored, results=FALSE}
+censoring_sizes <- c(rep(NA, 3), 5009, rep(NA, 15))
+fit_cen <- fit_nbbp_homogenous_bayes(
+  all_outbreaks = pneumonic_plague,
+  condition_geq = rep(2, length(pneumonic_plague)),
+  censor_geq = censoring_sizes,
+  seed = 42,
+  iter = 500,
+)
+```
+
+As always, first we inspect the MCMC.
+As stan has warned us, performance isn't amazing, but it is good enough for demonstration purposes.
+
+```{r plague censored mcmc}
+rstan::check_hmc_diagnostics(fit_cen)
+
+rstan::summary(fit_cen)$summary[, c("n_eff", "Rhat")]
+```
+
+Now we can look at what we estimated.
+
+```{r plague censored res}
+fit_cen
+```
+
+We can see that now there is some probability that $R < 1$, corresponding to the possibility that this chain was simply large, but finite.
+We again see considerable uncertainty about $k$.
+
+### Comparison
+Obviously, the two analyses disagree on whether $R$ can be below 1.
+When we take the chain of 5009 to be non-extinct, this probability is 0, while when we take that chain to be censored, it is `r round(mean(unlist(rstan::extract(fit_cen, "r_eff")) < 1), 2) * 100`%.
+Otherwise, though, estimates of $R$ are qualitatively similar.
+
+```{r}
+r_df <- data.frame(
+  r = c(
+    unlist(rstan::extract(fit_inf, "r_eff")),
+    unlist(rstan::extract(fit_cen, "r_eff"))
+  ),
+  large_chain = c(
+    rep("non-extinct", 10000),
+    rep("censored", 1000)
+  )
+)
+
+r_df |>
+  ggplot(aes(x = r, fill = large_chain, y = after_stat(density))) +
+  geom_histogram(position = "identity", alpha = 0.7) +
+  theme_minimal() +
+  xlab("R") +
+  geom_vline(xintercept = 1.0, lty = 2)
+```
+
+This suggests that, in some sense, the model "prefers" to consider the chain non-extinct even if we did not say it was such.
+We can compare, across the posterior on $(R, k)$, the probabilities of the chain being large (but finite) versus non-extinct.
+We can get these with the PMF (`dnbbp`) and CDF (`pnbbp`) functions in the package for all posterior samples.
+(Here we use 500 samples for illustrative purposes, but in general one should use the entire posterior.)
+```{r}
+probs <- rstan::extract(fit_cen, pars = c("r_eff", "dispersion")) |>
+  as.data.frame() |>
+  head(500) |>
+  mutate(
+    ccdf = purrr::map2_dbl(
+      r_eff, dispersion, function(r_eff, dispersion) {
+        1 - pnbbp(5008, r_eff, dispersion)
+      }
+    )
+  ) |>
+  mutate(
+    pr_non_extinct = purrr::map2_dbl(
+      r_eff, dispersion, function(r_eff, dispersion) {
+        dnbbp(Inf, r_eff, dispersion)
+      }
+    )
+  ) |>
+  mutate(
+    pr_large = purrr::map2_dbl(
+      ccdf, pr_non_extinct, function(ccdf, pr_non_extinct) {
+        ccdf - pr_non_extinct
+      }
+    )
+  )
+```
+For each sample, we can ask if the likelihood is greater for a non-extinct chain than a large-but-finite chain.
+The proportion of posterior mass where this is the case gives us a sense of how strong this preference is.
+This is `r {round(sum(probs$pr_non_extinct > probs$pr_large) / dim(probs)[1], 2) * 100}`%.
+
+Estimates of $k$ are even more similar between the two analysis choices than $R$.
+```{r}
+k_df <- data.frame(
+  k = c(
+    unlist(rstan::extract(fit_inf, "dispersion")),
+    unlist(rstan::extract(fit_cen, "dispersion"))
+  ),
+  large_chain = c(
+    rep("non-extinct", 10000),
+    rep("censored", 1000)
+  )
+)
+
+k_df |>
+  ggplot(aes(
+    x = log(k),
+    fill = large_chain,
+    y = after_stat(density)
+  )) +
+  geom_histogram(position = "identity", alpha = 0.7) +
+  theme_minimal() +
+  xlab("log(k)")
+```
+
+Note that while the analyses produced similar results here, that is not guaranteed to be the case in general.
+Differences are especially likely if the observed size of a non-extinct chain is not as large as it is here.
+Careful thought should be used to choose an analysis approach.

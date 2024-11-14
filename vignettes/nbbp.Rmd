@@ -1,0 +1,315 @@
+---
+title: "nbbp"
+output:
+  rmarkdown::html_vignette:
+    fig_width: 7
+    fig_height: 5
+vignette: >
+  %\VignetteIndexEntry{nbbp}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = F}
+library(knitr)
+knitr::opts_chunk$set(
+  out.extra = 'style="display:block; margin:auto;"'
+)
+```
+
+Welcome to `nbbp`, an R package for inference of parameters of negative binomial branching process models.
+This vignette covers the basics of inferring parameters from simple data, where every chain size is known exactly and our data includes every possible size.
+More advanced forms of data are covered in the "Advanced data" vignette.
+Note that a "chain" is not necessarily a linear structure and includes transmission trees.
+That is, it consists of the first infected individual, any and all individuals infected by the first, any and all individuals infected by the second generation, and so forth.
+
+As our example, we will analyze Borealpox.
+Currently, there are seven singleton cases which have been observed.
+While this data is simple enough to make by hand, it is available in the package.
+
+```{r bpox data}
+library(nbbp)
+library(ggplot2)
+data(borealpox)
+```
+
+# Simple Bayesian inference
+
+Fitting the model is accomplished by passing the data and the model object to `fit_nbbp_homogenous_bayes()`, which internally uses `rstan` for inference.
+This function allows significant control over `rstan` settings, as well as adjustments to the default priors (for more on those, see the vignette "Default priors").
+Here, for reproducibility, we will set the random seed, so that any time we run this code (with the same version of `rstan`) we will get the same answer.
+```{r, results=FALSE}
+fit <- fit_nbbp_homogenous_bayes(
+  all_outbreaks = borealpox,
+  seed = 42
+)
+```
+
+The output is a regular `rstan::stanfit` object, and can be summarized in the usual ways.
+As we are performing Bayesian inference, we should always check convergence diagnostics.
+```{r}
+rstan::check_hmc_diagnostics(fit)
+
+rstan::summary(fit)$summary[, c("n_eff", "Rhat")]
+```
+
+Now that we can see our MCMC is trustworthy, we can look at what our results are.
+There are 5 variables tracked in the object.
+Primarily, we have $R$ (`r_eff`) and $k$ (`dispersion`).
+Additionally, we track two values which are functions of $R$ and $k$ but can be useful in their own right.
+These are the probability that a chain goes extinct (`exn_prob`) and the probability that any one infection produces no additional infections (`p_0`).
+As it is the native parameter of the model, we also have $1 / \sqrt{k}$ (`inv_sqrt_dispersion`)
+
+Let us see what we have estimated.
+
+```{r}
+fit
+```
+
+We can see that the model is relatively confident $R < 1$, but there is still considerable uncertainty about its value.
+We can see even greater uncertainty about $k$, which is typical in practice without a relatively large number of chains observed.
+
+While `rstan` provides some basic plotting capabilities, this is not the only way to do so.
+Here we extract and plot things ourselves directly with ggplot, though we could also use the `bayesplot` package which has many nice visualizations.
+Plots show us
+```{r}
+par_df <- rstan::extract(fit, pars = c("r_eff", "dispersion", "p_0", "exn_prob")) |>
+  as.data.frame()
+
+par_df |>
+  ggplot(aes(x = r_eff, y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("R")
+```
+Here we can see that the posterior density is greatest for small values of $R$, as well as the long tails with larger values.
+
+The uncertainty about the dispersion parameter often makes it more usefully considered on the log-scale.
+```{r}
+par_df |>
+  ggplot(aes(x = log(dispersion), y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("log(k)")
+```
+This shows us that, while there is considerable uncertainty, the model favors relatively strong overdispersion.
+
+The probability that a chain goes extinct (`exn_prob`) is a function of $R$ and $k$.
+```{r}
+par_df |>
+  ggplot(aes(x = exn_prob, y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("extinction probability")
+```
+It is always 1 when $R < 1$, so since there is a `r {round(mean(unlist(rstan::extract(fit, "r_eff")) < 1), 2) * 100}`% probability that $R < 1$, most of the prior mass is on 1 exactly.
+Most of the rest of the mass is on values near 1, but we can see the considerably uncertainty about $R$ and $k$ manifest in the long left tail.
+While it isn't probable that 7 chains went extinct if the extinction probability is only, say, 0.8, it is not impossible ($0.8^7 \approx 0.21$).
+
+
+The proability of 0 offspring (`p_0`) is also a function of $R$ and $k$, and measures the probability that any particular infection produces no more infections.
+```{r}
+par_df |>
+  ggplot(aes(x = p_0, y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("probability of 0 offspring")
+```
+Since we have not seen any chains produce offspring, we should not be surprised to see that this probability is near 1.
+Though when there is strong overdispersion (small $k$), this can be near 1 even when $R$ is above 1.
+
+# Simple maximum likelihood inference
+
+The package also supports maximum likelihood inference.
+We do not suggest using maximum likelihood as the primary form of inference, but sometimes one may wish to see the results.
+This can be accomplished with `fit_nbbp_homogenous_ml()` which has much the same interface as `fit_nbbp_homogenous_bayes()`.
+By default, this attempts to obtain 10 converged search replicates from random starting locations, and will adaptively determine an appropriate method for producing confidence intervals.
+```{r, results=FALSE}
+fit_ml <- fit_nbbp_homogenous_ml(
+  all_outbreaks = borealpox,
+  seed = 42,
+  ci_width = 0.95
+)
+```
+
+The object returned here is a slightly enriched version of what is returned by `rstan::optimizing` for the replicate search which produced the maximum maximized likelihood.
+
+```{r bpox ml results}
+fit_ml
+```
+
+Here, `$par` tells us our maximum likelihood estimates of the parameters (and the additionally-tracked variables), and `$ci` the confidence intervals (for only $R$ and $k$).
+Additionally, `$convergence` returns the range of values of $R$, $k$, and the maximized likelihood across all search replicates.
+When there are wide (relative to the value) ranges observed, this signals trouble.
+
+Sometimes, we can understand the nature of issues with maximum likelihood inference by examining the likelihood surface.
+The function `compute_likelihood_surface()` computes this at a grid and enables visualization.
+```{r}
+r_vec <- exp(seq(log(1e-4), log(2), length.out = 100))
+k_vec <- exp(seq(log(0.01), log(9999), length.out = 100))
+
+lnl_surface <- compute_likelihood_surface(
+  borealpox,
+  r_grid = r_vec,
+  k_grid = k_vec
+)
+
+lnl_surface |>
+  ggplot(aes(x = r, y = k, fill = log_dens)) +
+  theme_minimal() +
+  geom_tile() +
+  scale_x_continuous(trans = "log") +
+  scale_y_continuous(trans = "log") +
+  scale_fill_viridis_c(option = "magma")
+```
+
+Here we see that the likelihood surface increases towards both $R = 0$ and $k = 0$.
+Roughly speaking, the region where the log-likelihood is within 12 units of the maximum value is within a bivariate confidence region.
+So we can see there is extensive uncertainty here, and a ridge (which is likely the source of our convergence issues).
+We can focus in on this ridge like so.
+
+```{r}
+lnl_surface |>
+  dplyr::mutate(
+    log_dens = ifelse(log_dens >= max(log_dens) - 1, log_dens, NA)
+  ) |>
+  ggplot(aes(x = r, y = k, fill = log_dens)) +
+  theme_minimal() +
+  geom_tile() +
+  scale_x_continuous(trans = "log") +
+  scale_y_continuous(trans = "log") +
+  scale_fill_viridis_c(option = "magma") +
+  xlab("R")
+```
+
+# "Is $R$ different?"
+
+While inference in this package is focused on cases where $R$ is homogenous, we can still try to make comparisons about $R$ between scenarios.
+
+## Measles
+For example, we might ask if $R$ is different in the two measles datasets included in the package.
+These correspond to cases in the United States from 1997-1999 and Canada from 1998-2001.
+To investigate this, we can simply fit the model, separately, to both datasets and examine the posteriors.
+
+```{r, results=FALSE, warning=FALSE}
+data(measles_us_97)
+data(measles_canada_98)
+
+us <- fit_nbbp_homogenous_bayes(measles_us_97, iter = 5000, seed = 42)
+canada <- fit_nbbp_homogenous_bayes(measles_canada_98, iter = 5000, seed = 42)
+```
+
+We have two sets of MCMC convergence diagnostics to check now.
+```{r}
+rstan::check_hmc_diagnostics(us)
+
+rstan::summary(us)$summary[, c("n_eff", "Rhat")]
+```
+We would normally be troubled by a `NaN`.
+However, when the posterior probability that $R < 1$ is 1, the extinction probability is always 1.
+Convergence diagnostics make use of the variance of a quantity in the posterior, and therefore produce `NaN`s here.
+
+```{r}
+rstan::check_hmc_diagnostics(canada)
+
+rstan::summary(canada)$summary[, c("n_eff", "Rhat")]
+```
+
+
+```{r}
+r_df <- data.frame(
+  r = c(
+    unlist(rstan::extract(us, "r_eff")),
+    unlist(rstan::extract(canada, "r_eff"))
+  ),
+  location = c(
+    rep("US", 10000),
+    rep("Canada", 10000)
+  )
+)
+
+r_df |>
+  ggplot(aes(x = r, fill = location, y = after_stat(density))) +
+  geom_histogram(position = "identity", alpha = 0.7) +
+  theme_minimal() +
+  xlab("R")
+```
+The posterior distributions on $R$ exhibit rather low overlap, suggesting that $R$ is in fact different.
+
+We can quantify this, if we like, by some measure of overlap of the posteriors.
+The percent of the posterior on $R$ for the US which is above the 2.5th percentile of the posterior on $R$ for Canada is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) >= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025)), 2) * 100}`.
+And the percent of the posterior on $R$ for Canada which is below the 97.5th percentile of the posterior on $R$ for the US is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) <= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.975)), 2) * 100}`.
+Or for a symmetric summary, we can try to find $\alpha$ and $q$ such that $\text{Pr}(R_{\text{US}} > q \mid \text{data}) = \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = \alpha$.
+(This is equivalent to finding $q$ such that $\text{Pr}(R_{\text{US}} \leq q \mid \text{data}) + \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = 1$, and we can use either posterior to then compute $\alpha$.)
+
+```{r}
+find_overlap <- function(r_small, r_large) {
+  # As pointed out, ECDFs are more efficient
+  # https://stats.stackexchange.com/questions/122857/how-to-determine-overlap-of-two-empirical-distribution-based-on-quantiles #nolint
+  p_r_small <- stats::ecdf(r_small)
+  p_r_large <- stats::ecdf(r_large)
+  loss_fn <- function(q) {
+    ((p_r_small(q) + p_r_large(q)) - 1)^2
+  }
+  optimize(loss_fn, range(c(r_small, r_large)))$minimum
+}
+
+q <- find_overlap(
+  r_df |> dplyr::filter(location == "US") |> dplyr::pull(r),
+  r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r)
+)
+
+overlap <- 1.0 - mean(
+  r_df |>
+    dplyr::filter(location == "US") |>
+    dplyr::pull(r)
+  <= q
+)
+```
+This gives us an overlap of `r {round(overlap, 2) * 100}`%.
+
+## MERS-CoV
+As another example, we might ask if $R$ is different for MERS-CoV  in the Arabian Peninsula after June 1, 2013 (compared to before).
+Again, we fit both datasets separately and compare.
+```{r, results=FALSE, warning=FALSE}
+data(mers_pre_june)
+data(mers_post_june)
+
+before <- fit_nbbp_homogenous_bayes(mers_pre_june, iter = 5000, seed = 42)
+after <- fit_nbbp_homogenous_bayes(mers_post_june, iter = 5000, seed = 42)
+```
+
+Again we have two sets of MCMC convergence diagnostics to check.
+```{r}
+rstan::check_hmc_diagnostics(before)
+
+rstan::summary(before)$summary[, c("n_eff", "Rhat")]
+```
+We see one divergent transition, which `rstan` would prefer was not present, but which should not trouble us.
+
+```{r}
+rstan::check_hmc_diagnostics(after)
+
+rstan::summary(after)$summary[, c("n_eff", "Rhat")]
+```
+
+```{r}
+r_df <- data.frame(
+  r = c(
+    unlist(rstan::extract(before, "r_eff")),
+    unlist(rstan::extract(after, "r_eff"))
+  ),
+  time = c(
+    rep("before", 10000),
+    rep("after", 10000)
+  )
+)
+
+r_df |>
+  ggplot(aes(x = r, fill = time, y = after_stat(density))) +
+  geom_histogram(position = "identity", alpha = 0.7) +
+  theme_minimal() +
+  xlab("R")
+```
+The posterior for the later cases completely covers the posterior for the earlier ones.
+Clearly, there is no evidence for a difference in $R$.

@@ -347,7 +347,6 @@ fit_nbbp_homogenous_ml <- function(
 .par_boot_nbbp_homogenous <- function(
     fit,
     all_outbreaks,
-    model,
     censor_geq,
     condition_geq,
     ci_width,
@@ -373,7 +372,6 @@ fit_nbbp_homogenous_ml <- function(
     chain_sizes <- all_boot_sizes[((b - 1) * n_obs + 1):(b * n_obs)]
     .fit_nbbp_homogenous_ml(
       chain_sizes,
-      model,
       censor_geq = censor_geq,
       condition_geq = condition_geq,
       run_reps = 1,
@@ -537,7 +535,6 @@ fit_nbbp_homogenous_ml <- function(
 #' Computes NBBP likelihood surface for given data at given grid
 #'
 #' @param all_outbreaks vector containing the size of each outbreak, including the index case
-#' @param model stan model compiled by compile_nbbp_homogenous
 #' @param r_grid vector of values of R at which the likelihood is to be evaluated.
 #' @param k_grid vector of values of k at which the likelihood is to be evaluated.
 #' @param censor_geq optional, possibly per-chain, censoring, see details.
@@ -547,7 +544,6 @@ fit_nbbp_homogenous_ml <- function(
 #' @export
 compute_likelihood_surface <- function(
     all_outbreaks,
-    model,
     r_grid,
     k_grid,
     censor_geq = rep(NA, length(all_outbreaks)),
