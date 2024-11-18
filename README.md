@@ -8,6 +8,12 @@
 
 The R package can be installed with `remotes::install_github("CDCGov/nbbp")`, to install just the package, or with `remotes::install_github("CDCGov/nbbp", build_vignettes = TRUE)` to install the package and build vignettes.
 
+Some of the package's dependencies require additional system-level dependencies to work, such as [pandoc](https://pandoc.org/).
+The [Posit Package Manager](https://packagemanager.posit.co/client/#/) is useful for determining what needs to be run to install these on your operating system, e.g. [for rstan](https://packagemanager.posit.co/client/#/repos/cran/packages/overview?search=rstan).
+
+When installing, the package will compile a [stan model](https://mc-stan.org/users/interfaces/rstan) and print a fair bit of text to screen.
+This is expected and can be ignored as long as the installation is successful.
+
 If building the vignettes, after loading the package in R (`library("nbbp")`), the following vignettes will be available:
 
 - `vignette("nbbp")`: introduction to the package and inference when all chains are completely observed and extinct
