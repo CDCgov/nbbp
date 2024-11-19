@@ -49,6 +49,7 @@ fit <- fit_nbbp_homogenous_bayes(
 
 The output is a regular `rstan::stanfit` object, and can be summarized in the usual ways.
 As we are performing Bayesian inference, we should always check convergence diagnostics.
+(For more on so doing, see the [stan manual](https://mc-stan.org/docs/reference-manual/analysis.html#convergence), the [rstan reference](https://cran.r-project.org/web/packages/rstan/rstan.pdf), or [Chapter 11.4 in Bayesian Data Analysis](http://www.stat.columbia.edu/~gelman/book/).)
 ```{r}
 rstan::check_hmc_diagnostics(fit)
 

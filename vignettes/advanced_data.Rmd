@@ -106,7 +106,8 @@ fit_cen <- fit_nbbp_homogenous_bayes(
 ```
 
 As always, first we inspect the MCMC.
-As stan has warned us, performance isn't amazing, but it is good enough for demonstration purposes.
+As stan has warned us, performance isn't amazing, and we should take both the convergence of our chains and the quality of the resulting estimates (especially for tail quantities) with a few grains of salt.
+However, for demonstration purposes, these results are good enough.
 
 ```{r plague censored mcmc}
 rstan::check_hmc_diagnostics(fit_cen)
