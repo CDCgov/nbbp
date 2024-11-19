@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 ```
 
 Welcome to `nbbp`, an R package for inference of parameters of negative binomial branching process models from final outbreak size data.
-This vignette covers the basics of inferring parameters from simple data, where every chain size is known exactly and our data includes every possible size.
+This vignette covers the basics of inferring parameters from simple data, where every possible chain size is observable and every observed chain size is known exactly.
 More advanced forms of data are covered in the "Advanced data" vignette.
 Note that a "chain" is not necessarily a linear structure and includes transmission trees.
 That is, it consists of the first infected individual, any and all individuals infected by the first, any and all individuals infected by the second generation, and so forth.
