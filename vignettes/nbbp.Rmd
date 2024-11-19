@@ -17,20 +17,22 @@ knitr::opts_chunk$set(
 )
 ```
 
-Welcome to `nbbp`, an R package for inference of parameters of negative binomial branching process models.
+Welcome to `nbbp`, an R package for inference of parameters of negative binomial branching process models from final outbreak size data.
 This vignette covers the basics of inferring parameters from simple data, where every chain size is known exactly and our data includes every possible size.
 More advanced forms of data are covered in the "Advanced data" vignette.
 Note that a "chain" is not necessarily a linear structure and includes transmission trees.
 That is, it consists of the first infected individual, any and all individuals infected by the first, any and all individuals infected by the second generation, and so forth.
+But as we are working with the final size of a chain, each observation is simply an integer: the total number of infections, including the first.
 
 As our example, we will analyze Borealpox.
-Currently, there are seven singleton cases which have been observed.
-While this data is simple enough to make by hand, it is available in the package.
-
+Currently, there are seven singleton cases which have been observed, each corresponding to a final chain size of 1.
+The data is included in the package, though we could have simply made it ourselves (e.g. `rep(1, 7)`).
 ```{r bpox data}
 library(nbbp)
 library(ggplot2)
 data(borealpox)
+
+borealpox
 ```
 
 # Simple Bayesian inference
@@ -107,7 +109,7 @@ Most of the rest of the mass is on values near 1, but we can see the considerabl
 While it isn't probable that 7 chains went extinct if the extinction probability is only, say, 0.8, it is not impossible ($0.8^7 \approx 0.21$).
 
 
-The proability of 0 offspring (`p_0`) is also a function of $R$ and $k$, and measures the probability that any particular infection produces no more infections.
+The probability of 0 offspring (`p_0`) is also a function of $R$ and $k$, and measures the probability that any particular infection produces no more infections.
 ```{r}
 par_df |>
   ggplot(aes(x = p_0, y = after_stat(density))) +
@@ -116,7 +118,10 @@ par_df |>
   xlab("probability of 0 offspring")
 ```
 Since we have not seen any chains produce offspring, we should not be surprised to see that this probability is near 1.
-Though when there is strong overdispersion (small $k$), this can be near 1 even when $R$ is above 1.
+(When there is strong overdispersion (small $k$), this can be near 1 even when $R$ is above 1.)
+We might expect, since none of these cases have produced any offspring, that the posterior would have a mode at 1.
+However, the default priors pull towards regimes where this probability is smaller (larger $R$ and $k$ both make it more likely that an infection has offspring), as can be seen in the plot in the "Default priors" vignette.
+
 
 # Simple maximum likelihood inference
 
@@ -238,7 +243,7 @@ The posterior distributions on $R$ exhibit rather low overlap, suggesting that $
 
 We can quantify this, if we like, by some measure of overlap of the posteriors.
 The percent of the posterior on $R$ for the US which is above the 2.5th percentile of the posterior on $R$ for Canada is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) >= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025)), 2) * 100}`.
-And the percent of the posterior on $R$ for Canada which is below the 97.5th percentile of the posterior on $R$ for the US is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) <= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.975)), 2) * 100}`.
+And the percent of the posterior on $R$ for Canada which is below the 97.5th percentile of the posterior on $R$ for the US is `r {round(mean(r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) <= r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) |> quantile(probs = 0.975)), 2) * 100}`.
 Or for a symmetric summary, we can try to find $\alpha$ and $q$ such that $\text{Pr}(R_{\text{US}} > q \mid \text{data}) = \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = \alpha$.
 (This is equivalent to finding $q$ such that $\text{Pr}(R_{\text{US}} \leq q \mid \text{data}) + \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = 1$, and we can use either posterior to then compute $\alpha$.)
 

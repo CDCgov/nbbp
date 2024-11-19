@@ -70,3 +70,16 @@ prior_predictive |>
   theme_minimal() +
   xlab("chain size")
 ```
+
+## Implicit default prior on `p_0`
+
+The samples from the prior predictive offspring distribution gives us a marginal summary of the probability that an infection produces no offspring.
+But we can also look at its implied prior distribution, as it is a function of $R$ and $k$.
+```{r, echo=FALSE, message=FALSE}
+prior_predictive |>
+  dplyr::mutate(p_0 = dnbinom(0, mu = r_eff, size = dispersion)) |>
+  ggplot(aes(x = p_0, y = after_stat(density))) +
+  geom_histogram() +
+  theme_minimal() +
+  xlab("Probability of 0 offspring")
+```
