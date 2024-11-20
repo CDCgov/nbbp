@@ -44,7 +44,8 @@
 #' @param mu_r_eff location parameter of Lognormal prior on r_eff (prior mean(log(r_eff))).
 #' @param sigma_r_eff scale parameter of Lognormal prior on r_eff (prior sd(log(r_eff))).
 #' @param sigma_inv_sqrt_dispersion scale of HalfNormal prior on 1 / sqrt(dispersion).
-#' @param iter number of iterations for rstan::sampling.
+#' @param iter number of iterations for rstan::sampling, default of 5000 intends to be conservative.
+#' @param control list for rstan::sampling, default attempts to set adapt_delta conservatively.
 #' @param ... further values past to rstan::sampling.
 #'
 #' @return an rstan stan_fit object
@@ -57,6 +58,7 @@ fit_nbbp_homogenous_bayes <- function(
     sigma_r_eff = 0.421404,
     sigma_inv_sqrt_dispersion = 1.482602,
     iter = 5000,
+    control = list(adapt_delta = 0.9),
     ...) {
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
@@ -69,7 +71,7 @@ fit_nbbp_homogenous_bayes <- function(
     likelihood = TRUE
   )
 
-  return(rstan::sampling(stanmodels$nbbp_homogenous, sdat, iter = iter, ...))
+  return(rstan::sampling(stanmodels$nbbp_homogenous, sdat, iter = iter, control = control, ...))
 }
 
 

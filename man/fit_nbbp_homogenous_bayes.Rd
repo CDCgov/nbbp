@@ -12,6 +12,7 @@ fit_nbbp_homogenous_bayes(
   sigma_r_eff = 0.421404,
   sigma_inv_sqrt_dispersion = 1.482602,
   iter = 5000,
+  control = list(adapt_delta = 0.9),
   ...
 )
 }
@@ -29,7 +30,9 @@ see details.}
 
 \item{sigma_inv_sqrt_dispersion}{scale of HalfNormal prior on 1 / sqrt(dispersion).}
 
-\item{iter}{number of iterations for rstan::sampling.}
+\item{iter}{number of iterations for rstan::sampling, default of 5000 intends to be conservative.}
+
+\item{control}{list for rstan::sampling, default attempts to set adapt_delta conservatively.}
 
 \item{...}{further values past to rstan::sampling.}
 }
