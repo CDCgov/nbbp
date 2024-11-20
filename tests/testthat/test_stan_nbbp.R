@@ -169,7 +169,6 @@ test_that("stan censored and nbbp agree on real data for many parameter values",
   for (i in length(chain_sizes)) {
     stan_surface <- compute_likelihood_surface(
       chain_sizes[[i]],
-      stanmodels$nbbp_homogenous,
       r_vec, k_vec,
       condition_geq = condition_sizes[[i]]
     )

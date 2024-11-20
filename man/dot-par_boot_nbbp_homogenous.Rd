@@ -7,7 +7,6 @@
 .par_boot_nbbp_homogenous(
   fit,
   all_outbreaks,
-  model,
   censor_geq,
   condition_geq,
   ci_width,
