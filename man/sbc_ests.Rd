@@ -13,8 +13,8 @@ data.frame with nominal quantiles and observed coverage.
 \item{k_point}{The posterior median value of k.}
 \item{r_low}{The posterior 2.5th percentile of R.}
 \item{r_high}{The posterior 97.5th percentile of R.}
-\item{k_low}{The posterior 2.5th percentile of R.}
-\item{k_high}{The posterior 97.5th percentile of R.}
+\item{k_low}{The posterior 2.5th percentile of k.}
+\item{k_high}{The posterior 97.5th percentile of k.}
 }
 }
 \source{
@@ -31,7 +31,7 @@ which produced \link[nbbp]{sbc_quants}.
 \dontrun{
 data(sbc_quants)
 plot(sbc_ests$r_true, sbc_ests$r_point)
-abline(a=0, b=1)
+abline(a = 0, b = 1)
 }
 }
 \keyword{datasets}

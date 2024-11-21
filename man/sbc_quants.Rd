@@ -35,7 +35,7 @@ are included in those used to compute coverage.
 \dontrun{
 data(sbc_quants)
 plot(sbc_quants$quantile, sbc_quants$r_covered)
-abline(a=0, b=1)
+abline(a = 0, b = 1)
 }
 }
 \keyword{datasets}

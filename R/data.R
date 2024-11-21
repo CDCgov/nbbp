@@ -220,8 +220,8 @@
 #'   \item{k_point}{The posterior median value of k.}
 #'   \item{r_low}{The posterior 2.5th percentile of R.}
 #'   \item{r_high}{The posterior 97.5th percentile of R.}
-#'   \item{k_low}{The posterior 2.5th percentile of R.}
-#'   \item{k_high}{The posterior 97.5th percentile of R.}
+#'   \item{k_low}{The posterior 2.5th percentile of k.}
+#'   \item{k_high}{The posterior 97.5th percentile of k.}
 #' }
 #' @keywords datasets
 #' @source Generated in R using nbbp.
