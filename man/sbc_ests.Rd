@@ -31,7 +31,7 @@ which produced \link[nbbp]{sbc_quants}.
 \dontrun{
 data(sbc_quants)
 plot(sbc_ests$r_true, sbc_ests$r_point)
-abline(a=0, b=1)
+abline(a = 0, b = 1)
 }
 }
 \keyword{datasets}

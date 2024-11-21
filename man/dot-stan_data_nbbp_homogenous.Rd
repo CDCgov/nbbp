@@ -10,8 +10,8 @@
   condition_geq,
   prior,
   likelihood,
-  mu_r_eff,
-  sigma_r_eff,
+  a_r_eff,
+  b_r_eff,
   sigma_inv_sqrt_dispersion
 )
 }
