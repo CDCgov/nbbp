@@ -127,7 +127,7 @@ Another quantity we should expect our model handles well is the mean size of ext
 As there is some small probability of quite large chains, it will be easiest to examine this on the log scale.
 
 ```{r plague plot mean size}
-pred_mean <- posterior_predictive |>
+pred_mean <- pool_predictive |>
   group_by(index) |>
   summarize(
     r = mean(r),
@@ -318,7 +318,7 @@ names(diff_predictive) <- "diff_means"
 ggplot(diff_predictive, aes(x = diff_means, y = after_stat(density))) +
   geom_histogram(data = diff_predictive) +
   theme_minimal() +
-  xlab("Absoluteifference in mean chain size") +
+  xlab("Absolute difference in mean chain size") +
   geom_vline(xintercept = obs_diff, col = "red", lwd = 1.5)
 ```
 
