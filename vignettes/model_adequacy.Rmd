@@ -141,7 +141,7 @@ pred_mean |>
   geom_histogram(bins = 20, aes(y = after_stat(density))) +
   scale_x_continuous(transform = "log") +
   theme_minimal() +
-  xlab("mean extinct chain size") +
+  xlab("Mean extinct chain size") +
   geom_vline(xintercept = obs_mean, col = "red", lwd = 1.5)
 ```
 
@@ -174,7 +174,7 @@ The fit here is not bad, if not as good as for the mean.
 We can see our model tends to expect somewhat more variability than our observed dataset, but the observed value is still well within the predictive distribution.
 
 ## Tails
-One place we might expect our model to break down more is in the tails.
+One place we might expect our model to break down more than the first few moments of the distribution is in the tails.
 The more extreme (by model standards) large chains are where the model is more likely to be a bad description of reality.
 Here, since we only have 18 finite observations, we will focus on the 83rd percentile of extinct chains (the 4th-largest finite chain size).
 With larger datasets, we can be more comfortable pushing farther out into the tails.
@@ -201,6 +201,36 @@ pred_tail |>
 ```
 
 The fit here is again pretty good.
+
+## Variability take two
+Above, we examined the posterior predictive distribution on chain size standard deviations.
+But the variability in chain size distribution is related to the mean, so we might wonder if getting either right separately is the most useful question to ask.
+We can instead look at a function of both, such as the coefficient of variation.
+
+```{r plague plot coef var}
+pred_cov <- posterior_predictive |>
+  group_by(index) |>
+  summarize(
+    r = mean(r),
+    k = mean(k),
+    cov = sd(chain_size[is.finite(chain_size)]) / mean(chain_size[is.finite(chain_size)])
+  )
+obs_cov <- sd(pneumonic_plague_inf[is.finite(pneumonic_plague_inf)]) /
+  mean(pneumonic_plague_inf[is.finite(pneumonic_plague_inf)])
+
+pred_cov |>
+  ggplot(aes(x = cov)) +
+  geom_histogram(bins = 20, aes(y = after_stat(density))) +
+  theme_minimal() +
+  xlab("Chain size coefficient of variation") +
+  geom_vline(xintercept = obs_cov, col = "red", lwd = 1.5)
+```
+
+Here we see that our model predicts rather higher coefficients of variation, meaning it expects more dispersion relative to the mean.
+This seems to suggest that the observed chain sizes are less overdispersed than our model predicted, possibly implying that we have somewhat under-estimated $k$.
+Given everything else we have seen, this does not mean we should immediately throw out our model entirely; all models are wrong, after all.
+It can, however, provide helpful context knowing how to interpret its predictions.
+For example, as $k$ plays an important role in the tails of the chain-size distribution, we might expect that our tails are a bit too fat and interpret them with caution.
 
 # Other distributions on observables
 Broadly, the posterior predictive distribution concerns itself with observable quantities, rather than parameters.
@@ -323,4 +353,6 @@ ggplot(diff_predictive, aes(x = diff_means, y = after_stat(density))) +
 ```
 
 The posterior probability, under the pooled model, of a mean difference as great or greater than observed is `r round(mean(diff_predictive >= obs_diff), 2)`.
-That the observed difference is unlikely confirms what we suspected from looking at the posteriors of $R$ from separate analyses: the pooled model is a poor fit, there is probably a difference.
+That the observed difference is unlikely confirms what we suspected from looking at the posteriors of $R$ from separate analyses: a pooled model is a poor fit.
+Note that, in general all one can conclude is that the model is a poor fit.
+But, since we can separate out the effect on the mean of $R$ from $k$, and all effect is from $R$, it is not a huge leap of logic to conclude that the pooled model is wrong because $R$ is different in the two groups, rather than because $k$ is different (though it might be).
