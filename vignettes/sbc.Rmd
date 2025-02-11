@@ -93,7 +93,7 @@ sbc_ests |>
 ```
 
 
-### Estimating $R$
+### Estimating $k$
 
 Here we plot the posterior median $k$ against the true simulating $k$, with the 95% CI as a bar.
 Points are red (with non-transparent bars) when the true value is not in the 95% CI, and blue (with transparent bars) otherwise.
