@@ -10,7 +10,7 @@ for i in "${ivec[@]}"; do
     for n in "${nvec[@]}"; do
         for r in "${rvec[@]}"; do
             for k in "${kvec[@]}"; do
-                timeout 10s Rscript --vanilla -e "source(\"src/run_analysis.R\"); fit_ml(\"data/i${i}_n${n}_r${r}_k${k}.txt\", \"maxlik/i${i}_n${n}_r${r}_k${k}.txt\", ${seed})"
+                timeout 30s Rscript --vanilla -e "source(\"src/run_analysis.R\"); fit_ml(\"data/i${i}_n${n}_r${r}_k${k}.txt\", \"maxlik/i${i}_n${n}_r${r}_k${k}.txt\", ${seed})"
                 seed=$((seed+1))
             done
         done

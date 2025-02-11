@@ -30,7 +30,7 @@ r.txt:
 k.txt:
 	printf "%s\n" $(kvec) > par/k.txt
 
-# Makes sure timeout command exists, otherwise we can't use bayes.sh or maxlik.sh
+# Makes sure timeout command exists
 check_timeout:
 	@which timeout > which_timeout.txt
 
