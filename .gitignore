@@ -1,5 +1,3 @@
-data-raw/sim-study
-
 src/
 #####
 # Exclude many data and output file types by default
