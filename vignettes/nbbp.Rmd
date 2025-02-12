@@ -166,27 +166,37 @@ lnl_surface |>
   geom_tile() +
   scale_x_continuous(trans = "log") +
   scale_y_continuous(trans = "log") +
+  xlab("R") +
   scale_fill_viridis_c(option = "magma")
 ```
 
-Here we see that the likelihood surface increases towards both $R = 0$ and $k = 0$.
 Roughly speaking, the region where the log-likelihood is within 12 units of the maximum value is within a bivariate confidence region.
-So we can see there is extensive uncertainty here, and a ridge (which is likely the source of our convergence issues).
-We can focus in on this ridge like so.
+We can see there is extensive uncertainty here, as most of this plot is within a 12 log-likelihood unit range of the maximum.
+
+We also see that the the log-likelihood surface does not appear to have a single mode.
+It is easier to see what is going on if we focus in on where the likelihood is highest.
 
 ```{r}
+r_vec <- exp(seq(log(1e-4), log(0.02), length.out = 100))
+
+lnl_surface <- compute_likelihood_surface(
+  borealpox,
+  r_grid = r_vec,
+  k_grid = k_vec
+)
+
 lnl_surface |>
-  dplyr::mutate(
-    log_dens = ifelse(log_dens >= max(log_dens) - 1, log_dens, NA)
-  ) |>
   ggplot(aes(x = r, y = k, fill = log_dens)) +
   theme_minimal() +
   geom_tile() +
   scale_x_continuous(trans = "log") +
   scale_y_continuous(trans = "log") +
-  scale_fill_viridis_c(option = "magma") +
-  xlab("R")
+  xlab("R") +
+  scale_fill_viridis_c(option = "magma")
 ```
+
+The likelihood increases as $R$ decreases, but once $R$ gets small, for a fixed $R$ the likelihood appears to be constant in $k$.
+The presence of this ridge, rather than a single mode, likely explains the convergence difficulties
 
 # "Is $R$ different?"
 
@@ -291,7 +301,6 @@ rstan::check_hmc_diagnostics(before)
 
 rstan::summary(before)$summary[, c("n_eff", "Rhat")]
 ```
-We see one divergent transition, which `rstan` would prefer was not present, but which should not trouble us.
 
 ```{r}
 rstan::check_hmc_diagnostics(after)
