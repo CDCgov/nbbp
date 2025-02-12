@@ -1,10 +1,15 @@
+parse_chains <- function(datapath, offset, nchains) {
+  scan(datapath)[offset + (1:nchains)]
+}
+
 fit_bayes <- function(
+    offset, nchains,
     datapath, outpath,
     seed, iter = 5000, alpha = 0.05, ess_thresh = 1000, rhat_thresh = 1.005) {
   q_low <- alpha / 2
   q_high <- 1 - q_low
 
-  chains <- scan(datapath)
+  chains <- parse_chains(datapath, offset, nchains)
 
   bayes_ests <- c(
     r_point = NA, k_point = NA,
@@ -41,11 +46,11 @@ fit_bayes <- function(
   write.table(as.data.frame(bayes_ests), file = outpath, col.names = FALSE, quote = FALSE)
 }
 
-fit_ml <- function(datapath, outpath, seed, nboot = 1000, alpha = 0.05) {
+fit_ml <- function(offset, nchains, datapath, outpath, seed, nboot = 1000, alpha = 0.05) {
   q_low <- alpha / 2
   q_high <- 1 - q_low
 
-  chains <- scan(datapath)
+  chains <- parse_chains(datapath, offset, nchains)
 
   maxlik_ests <- c(
     r_point = NA, k_point = NA,
