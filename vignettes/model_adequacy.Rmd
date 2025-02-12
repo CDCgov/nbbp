@@ -48,7 +48,7 @@ In general one uses _all_ posterior samples.
 
 In our simulations, we have to account for conditioning.
 That is, we have told the analytical model that the data was gathered in such a way as to ignore all chains of size 1.
-We should therefore also simulated only datasets without singletons.
+We should therefore also simulate only datasets without singletons.
 On the other hand, it might be interesting to know how many singletons the model predicts we did not include in the dataset.
 So, unconditional simulations could be useful too, for specific purposes, but we will start with conditional ones.
 
@@ -64,7 +64,7 @@ posterior_predictive <- data.frame(
 ) |>
   filter(index %in% sample.int(10000, npred)) |>
   mutate(
-    chain_size = map2(
+    chain_size = purrr::map2(
       r, k, function(r, k) {
         chains <- NULL
         # Ensure we meet conditioning
@@ -127,7 +127,7 @@ Another quantity we should expect our model handles well is the mean size of ext
 As there is some small probability of quite large chains, it will be easiest to examine this on the log scale.
 
 ```{r plague plot mean size}
-pred_mean <- pool_predictive |>
+pred_mean <- posterior_predictive |>
   group_by(index) |>
   summarize(
     r = mean(r),
@@ -258,7 +258,7 @@ n_unseen <- posterior_predictive |>
     k = mean(k),
   ) |>
   mutate(
-    n_singletons = map2_int(
+    n_singletons = purrr::map2_int(
       r, k, sample_unseen
     )
   )
@@ -292,7 +292,7 @@ where $\mathbf{y}$ is our observed chain-size data ($s = ||\mathbf{y}||$).
 # Model testing with the posterior predictive
 The posterior predictive distribution can be used to test models in the frequentist fashion.
 That is, we can ask if our model is so far off the mark in explaining some feature of our data that we should reject it as inadequate.
-To examine this, let us return to the example of comparing $R$ for measles between the U.S. and Candada in the late 1990s.
+To examine this, let us return to the example of comparing $R$ for measles between the U.S. and Canada in the late 1990s.
 Previously, we saw that the posterior distributions had a small amount of overlap, but that this can be somewhat difficult to interpret.
 As an alternative, we can examine instead the evidence against a pooled model in which they have the same $R$.
 
@@ -326,7 +326,7 @@ pooled_predictive <- data.frame(
 ) |>
   filter(index %in% sample.int(10000, npred)) |>
   mutate(
-    chain_size = map2(
+    chain_size = purrr::map2(
       r, k, function(r, k) {
         rnbbp(nchains, r, k)
       }
