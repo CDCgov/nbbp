@@ -170,11 +170,11 @@ lnl_surface |>
   scale_fill_viridis_c(option = "magma")
 ```
 
-Roughly speaking, the region where the log-likelihood is within 12 units of the maximum value is within a bivariate confidence region.
+Roughly speaking, by [Wilks' theorem](https://en.wikipedia.org/wiki/Wilks%27_theorem) the region where the log-likelihood is within 12 units of the maximum value is within a bivariate 95% confidence region.
 We can see there is extensive uncertainty here, as most of this plot is within a 12 log-likelihood unit range of the maximum.
 
 We also see that the the log-likelihood surface does not appear to have a single mode.
-It is easier to see what is going on if we focus in on where the likelihood is highest.
+It is easier to see what is going on if we focus in on where the likelihood is highest: small values of $R$.
 
 ```{r}
 r_vec <- exp(seq(log(1e-4), log(0.02), length.out = 100))
@@ -256,7 +256,7 @@ The posterior distributions on $R$ exhibit rather low overlap, suggesting that $
 We can quantify this, if we like, by some measure of overlap of the posteriors.
 We might, for example, contemplate what percent  of the posterior on $R_{\text{US}}$ is above the 2.5th percentile of the posterior on $R_{\text{Canada}}$.
 We would then compute the 2.5th percentile of $R_{\text{Canada}}$, find that it is `r {unname(round(r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025), 2))}`, and count the percent of samples of $R_{\text{US}}$ which are larger than this and find that it is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) >= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025)), 2) * 100}`%.
-Or we could do this the other way around, and ask what percent  of the posterior on $R_{\text{Canada}}$ is below the which is below the 97.5th percentile of the posterior on $R_{\text{US}}$.
+Or we could do this the other way around, and ask what percent  of the posterior on $R_{\text{Canada}}$ is below below the 97.5th percentile of the posterior on $R_{\text{US}}$.
 This is `r {round(mean(r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) <= r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) |> quantile(probs = 0.975)), 2) * 100}`%.
 
 These summaries are not entirely satisfying, as we have both an arbitrary reference quantile and an asymmetric measure.
