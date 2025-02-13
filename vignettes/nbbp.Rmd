@@ -196,7 +196,8 @@ lnl_surface |>
 ```
 
 The likelihood increases as $R$ decreases, but once $R$ gets small, for a fixed $R$ the likelihood appears to be constant in $k$.
-The presence of this ridge, rather than a single mode, likely explains the convergence difficulties
+The presence of this ridge shape, rather than a single mode, likely explains the convergence difficulties we saw with maximum likelihood estimation.
+For sufficiently small $R$, we can pick any $k$ and not change the likelihood, so the value of $k$ the optimizer ends up giving us is going to depend a lot on where it started.
 
 # "Is $R$ different?"
 
@@ -253,10 +254,17 @@ r_df |>
 The posterior distributions on $R$ exhibit rather low overlap, suggesting that $R$ is in fact different.
 
 We can quantify this, if we like, by some measure of overlap of the posteriors.
-The percent of the posterior on $R$ for the US which is above the 2.5th percentile of the posterior on $R$ for Canada is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) >= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025)), 2) * 100}`.
-And the percent of the posterior on $R$ for Canada which is below the 97.5th percentile of the posterior on $R$ for the US is `r {round(mean(r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) <= r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) |> quantile(probs = 0.975)), 2) * 100}`.
-Or for a symmetric summary, we can try to find $\alpha$ and $q$ such that $\text{Pr}(R_{\text{US}} > q \mid \text{data}) = \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = \alpha$.
-(This is equivalent to finding $q$ such that $\text{Pr}(R_{\text{US}} \leq q \mid \text{data}) + \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = 1$, and we can use either posterior to then compute $\alpha$.)
+We might, for example, contemplate what percent  of the posterior on $R_{\text{US}}$ is above the 2.5th percentile of the posterior on $R_{\text{Canada}}$.
+We would then compute the 2.5th percentile of $R_{\text{Canada}}$, find that it is `r {unname(round(r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025), 2))}`, and count the percent of samples of $R_{\text{US}}$ which are larger than this and find that it is `r {round(mean(r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) >= r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) |> quantile(probs = 0.025)), 2) * 100}`%.
+Or we could do this the other way around, and ask what percent  of the posterior on $R_{\text{Canada}}$ is below the which is below the 97.5th percentile of the posterior on $R_{\text{US}}$.
+This is `r {round(mean(r_df |> dplyr::filter(location == "Canada") |> dplyr::pull(r) <= r_df |> dplyr::filter(location == "US") |> dplyr::pull(r) |> quantile(probs = 0.975)), 2) * 100}`%.
+
+These summaries are not entirely satisfying, as we have both an arbitrary reference quantile and an asymmetric measure.
+We could instead try to define, jointly, a single probability $\alpha$ and corresponding quantile $q$ such that $\text{Pr}(R_{\text{US}} > q \mid \text{data}) = \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = \alpha$.
+That is, find the value of $R$ for which the posterior probability that $R_{\text{US}}$ is larger is equal to the posterior probability that $R_{\text{Canada}}$ is smaller.
+Since $\text{Pr}(R_{\text{US}} \leq q \mid \text{data}) = 1 - \text{Pr}(R_{\text{US}} > q \mid \text{data})$, we can rearrange this equation and remove $\alpha$, simply writing $\text{Pr}(R_{\text{US}} \leq q \mid \text{data}) + \text{Pr}(R_{\text{Canada}} \leq q \mid \text{data}) = 1$.
+Once we solve for $q$, we get our overlap percent ($\alpha \times 100$%) for free and can estimate it from our samples of either the posterior on $R_{\text{US}}$ or on $R_{\text{Canada}}$.
+This can't simply be done in one chain of `dplyr` calls, so we will need to write some code.
 
 ```{r}
 find_overlap <- function(r_small, r_large) {
