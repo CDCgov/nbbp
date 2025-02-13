@@ -10,6 +10,7 @@ fit_bayes <- function(
   q_high <- 1 - q_low
 
   chains <- parse_chains(datapath, offset, nchains)
+  stopifnot("Got unexpected number of chains" = (length(chains) != nchains))
 
   bayes_ests <- c(
     r_point = NA, k_point = NA,
@@ -51,6 +52,7 @@ fit_ml <- function(offset, nchains, datapath, outpath, seed, nboot = 1000, alpha
   q_high <- 1 - q_low
 
   chains <- parse_chains(datapath, offset, nchains)
+  stopifnot("Got unexpected number of chains" = (length(chains) != nchains))
 
   maxlik_ests <- c(
     r_point = NA, k_point = NA,
