@@ -1,14 +1,12 @@
-library(tibble)
-
 parse_par <- function(fp) {
   true_par <- gsub(".txt", "", basename(fp), fixed = TRUE)
   true_par <- strsplit(true_par, "_", fixed = TRUE)[[1]]
   true_par <- gsub("[[:alpha:]]", "", true_par)
   return(data.frame(
-    index = true_par[1],
-    n_chains = true_par[2],
-    r_true = true_par[3],
-    k_true = true_par[4]
+    index = as.integer(true_par[1]),
+    n_chains = as.integer(true_par[2]),
+    r_true = as.numeric(true_par[3]),
+    k_true = as.numeric(true_par[4])
   ))
 }
 
@@ -35,5 +33,8 @@ ml <- lapply(
 )
 
 sim_based_testing <- rbind(do.call(rbind, bayes), do.call(rbind, ml))
+
+sim_unique <- sim_based_testing |> dplyr::distinct()
+stopifnot("Simulation duplicates found" = dim(sim_unique) == dim(sim_based_testing))
 
 usethis::use_data(sim_based_testing, overwrite = TRUE)

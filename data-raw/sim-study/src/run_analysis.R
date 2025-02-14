@@ -1,5 +1,8 @@
 parse_chains <- function(datapath, offset, nchains) {
-  scan(datapath)[offset + (1:nchains)]
+  all_chains <- scan(datapath, what = numeric())
+  stopifnot(offset >= 0)
+  stopifnot(offset + nchains <= length(all_chains))
+  return(all_chains[offset + (1:nchains)])
 }
 
 fit_bayes <- function(
@@ -11,6 +14,7 @@ fit_bayes <- function(
 
   chains <- parse_chains(datapath, offset, nchains)
   stopifnot("Got unexpected number of chains" = (length(chains) == nchains))
+  stopifnot("Got bad chains" = (all(is.numeric(chains)) && all(chains > 0)))
 
   bayes_ests <- c(
     r_point = NA, k_point = NA,
@@ -52,6 +56,7 @@ fit_ml <- function(offset, nchains, datapath, outpath, seed, nboot = 1000, alpha
   q_high <- 1 - q_low
 
   chains <- parse_chains(datapath, offset, nchains)
+  stopifnot("Got bad chains" = (all(is.numeric(chains)) && all(chains > 0)))
   stopifnot("Got unexpected number of chains" = (length(chains) == nchains))
 
   maxlik_ests <- c(
