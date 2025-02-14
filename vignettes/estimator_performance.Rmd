@@ -1,0 +1,69 @@
+---
+title: "Estimator performance"
+output:
+  rmarkdown::html_vignette:
+    fig_width: 7
+    fig_height: 5
+vignette: >
+  %\VignetteIndexEntry{Estimator performance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = F}
+library(knitr)
+knitr::opts_chunk$set(
+  out.extra = 'style="display:block; margin:auto;"'
+)
+```
+
+```{r plague data}
+library(nbbp)
+library(dplyr)
+library(ggplot2)
+data(sim_based_testing)
+```
+
+```{r}
+sim_based_testing |>
+  filter(estimator == "bayes") |>
+  ggplot(aes(x = factor(r_true), y = r_point, color = factor(n_chains))) +
+  geom_boxplot(outliers = FALSE)
+```
+
+```{r}
+sim_based_testing |>
+  filter(estimator == "bayes") |>
+  ggplot(aes(x = factor(r_true), y = r_point, color = factor(k_true))) +
+  geom_boxplot(outliers = FALSE)
+```
+
+```{r}
+sim_based_testing |>
+  filter(estimator == "bayes") |>
+  ggplot(aes(x = factor(k_true), y = k_point, color = factor(n_chains))) +
+  geom_boxplot(outliers = FALSE)
+```
+
+```{r}
+sim_based_testing |>
+  filter(estimator == "bayes") |>
+  ggplot(aes(x = factor(k_true), y = k_point, color = factor(r_true))) +
+  geom_boxplot(outliers = FALSE)
+```
+
+
+
+```{r}
+sim_based_testing |>
+  filter(r_true == 2.0) |>
+  pull(r_high) |>
+  summary()
+```
+
+
+```{r}
+sim_based_testing <- sim_based_testing |>
+  mutate(r_covered = (r_true > r_low & r_true < r_high)) |>
+  mutate(k_covered = (k_true > k_low & k_true < k_high))
+```
