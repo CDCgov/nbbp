@@ -205,4 +205,4 @@
 #' plot(sbc_ests$r_true, sbc_ests$r_point)
 #' abline(a = 0, b = 1)
 #' }
-"sbc_ests"
+"sim_based_testing"
