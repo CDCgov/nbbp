@@ -202,7 +202,7 @@
 #' @examples
 #' \dontrun{
 #' data(sbc_quants)
-#' plot(sbc_ests$r_true, sbc_ests$r_point)
+#' plot(sim_based_testing$r_true, sim_based_testing$r_point)
 #' abline(a = 0, b = 1)
 #' }
 "sim_based_testing"
