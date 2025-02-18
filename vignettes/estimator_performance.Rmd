@@ -1,9 +1,10 @@
----
+co---
 title: "Estimator performance"
 output:
   rmarkdown::html_vignette:
     fig_width: 7
     fig_height: 5
+    code_folding: "hide"
 vignette: >
   %\VignetteIndexEntry{Estimator performance}
   %\VignetteEngine{knitr::rmarkdown}
@@ -17,53 +18,237 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r plague data}
+```{r, message=FALSE, warning=FALSE}
 library(nbbp)
 library(dplyr)
 library(ggplot2)
+library(scales)
+library(tidyr)
+
 data(sim_based_testing)
 ```
 
+This vignette mostly serves as a series of plots in which one can examine the quality of point and interval estimates from Bayesian inference and maximum likelihood using `nbbp` under default settings.
+The data used to do this comes from simulating 100 datasets each at a grid of $R$ and $k$ values for several dataset sizes (10, 20, and 40 chains observed).
+For each simulated dataset, `fit_nbbp_homogenous_bayes` and `fit_nbbp_homogenous_ml` were used to infer parameters, recording point estimates (posterior median, maximum likelihood) and 95% uncertainty (credible, confidence) intervals were recorded.
+This is available as the package data `sim_based_testing`.
+
+# Point estimation performance
+
+The following code defines a plotting function to compare Bayesian and maximum likelihood point estimates side-by-side, while allowing us to  control for and examine the impact of an additional variable on performance (namely, the other parameter in the model, and the amount of data).
+
 ```{r}
-sim_based_testing |>
-  filter(estimator == "bayes") |>
-  ggplot(aes(x = factor(r_true), y = r_point, color = factor(n_chains))) +
-  geom_boxplot(outliers = FALSE)
+est_labeler <- as_labeller(c(
+  "bayes" = "Bayesian",
+  "maxlik" = "Maximum likelihood"
+))
+
+plot_point_ests <- function(param, covar) {
+  truth <- ifelse(param == "r", "r_true", "k_true")
+  estimated <- ifelse(param == "r", "r_point", "k_point")
+  titlename <- ifelse(param == "r", "Estimation of R", "Estimation of k")
+  sim_based_testing$factor_truth <- factor(
+    sim_based_testing[[truth]],
+    levels = sort(unique(sim_based_testing[[truth]]))
+  )
+  sim_based_testing$factor_covar <- factor(
+    sim_based_testing[[covar]],
+    levels = sort(unique(sim_based_testing[[covar]]))
+  )
+  boxes <- ggplot(data = sim_based_testing, aes(
+    x = .data[["factor_truth"]],
+    y = .data[[estimated]],
+    fill = .data[["factor_covar"]]
+  )) +
+    geom_boxplot(outliers = FALSE, alpha = 0.5) +
+    scale_fill_viridis_d("viridis", name = covar) +
+    facet_wrap(vars(get("estimator")), labeller = est_labeler) +
+    theme_minimal() +
+    xlab("True value") +
+    ylab("Estimated value") +
+    ggtitle(titlename)
+
+  true_vals <- sort(unique(sim_based_testing[[truth]]))
+  for (i in seq_along(true_vals)) {
+    segment <- local({
+      i <- i
+      geom_segment(
+        aes(x = i - 0.5, xend = i + 0.5, y = true_vals[i]),
+        col = "red",
+        lty = 2
+      )
+    })
+    boxes <- boxes + segment
+  }
+
+  return(boxes)
+}
+```
+## $R$
+
+As we can see below, maximum likelihood inference generally does a decent job estimating small $R$, but starts having trouble near 1, while Bayesian inference does best around 1.
+Increasing amounts of data are helpful, as expected, though the effects are much more pronounced for maximum likelihood inference.
+Larger true values of $k$ (regimes with less overdispersion) make inference better.
+
+### By number of chains in dataset
+
+```{r, message=FALSE, warning=FALSE}
+plot_point_ests("r", "n_chains")
 ```
 
-```{r}
-sim_based_testing |>
-  filter(estimator == "bayes") |>
-  ggplot(aes(x = factor(r_true), y = r_point, color = factor(k_true))) +
-  geom_boxplot(outliers = FALSE)
+### By $k$
+
+```{r, message=FALSE, warning=FALSE}
+plot_point_ests("r", "k_true")
 ```
 
-```{r}
-sim_based_testing |>
-  filter(estimator == "bayes") |>
-  ggplot(aes(x = factor(k_true), y = k_point, color = factor(n_chains))) +
-  geom_boxplot(outliers = FALSE)
+## $k$
+Maximum likelihood inference appears to provide significantly more variable estimates of $k$ than Bayesian inference, and is notably worse at larger values of $k$ than smaller.
+Both do worse when $R$ is also small, though maximum likelihood does best at middling values while Bayesian inference seems to plateau.
+
+### By number of chains in dataset
+
+```{r, message=FALSE, warning=FALSE}
+plot_point_ests("k", "n_chains") + scale_y_continuous(trans = "log")
 ```
 
-```{r}
-sim_based_testing |>
-  filter(estimator == "bayes") |>
-  ggplot(aes(x = factor(k_true), y = k_point, color = factor(r_true))) +
-  geom_boxplot(outliers = FALSE)
+### By $R$
+
+```{r, message=FALSE, warning=FALSE}
+plot_point_ests("k", "r_true") + scale_y_continuous(trans = "log")
 ```
 
+# Coverage of 95% CIs
 
+The following code defines a plotting function to compare the coverage of Bayesian credible intervals with confidence intervals from maximum likelihood inference side-by-side, while allowing us to  control for and examine the impact of an additional variable on performance (namely, the other parameter in the model, and the amount of data).
 
+Note that "good" performance can be counterintuitive here.
+The simulations record the 95% CIs for both approaches, which means that the ideal coverage is 95%.[^1]
+That is, a "good" 95% CI will be wrong 5% of the time.
+(Otherwise it isn't a 95% CI, it's something else.)
+All things being equal, we'd rather it covered a bit too much rather than not quite enough.
+That is, 96% coverage would be preferable to 94%, but 94% is still better than 100%.
+
+[^1]: That is, assuming we want good frequentist properties from our Bayesian credible intervals. For the purposes of this comparison, we do. We leave philisophical matters aside as out of scope.
 ```{r}
-sim_based_testing |>
-  filter(r_true == 2.0) |>
-  pull(r_high) |>
-  summary()
+plot_coverage <- function(param, covar) {
+  truth <- ifelse(param == "r", "r_true", "k_true")
+  low <- ifelse(param == "r", "r_low", "k_low")
+  high <- ifelse(param == "r", "r_high", "k_high")
+  estimated <- ifelse(param == "r", "r_point", "k_point")
+  titlename <- ifelse(param == "r", "Coverage of R", "Coverage of k")
+  sim_based_testing$color_col <- col_numeric("viridis", domain = NULL)(sim_based_testing[[covar]])
+  sim_based_testing$covered <- sim_based_testing[[estimated]] > sim_based_testing[[low]] &
+    sim_based_testing[[estimated]] < sim_based_testing[[high]]
+  legend_labels <- unique(sim_based_testing[[covar]])
+  legend_breaks <- unique(sim_based_testing[["color_col"]])
+  sim_based_testing |>
+    mutate(covered = r_true > r_low & r_true < r_high) |>
+    group_by_at(c("estimator", covar, truth, "color_col")) |>
+    summarize(coverage = mean(get("covered"), na.rm = TRUE)) |>
+    ggplot(aes(x = .data[[truth]], y = .data[["coverage"]], col = .data[["color_col"]])) +
+    scale_color_identity(
+      name = covar, labels = legend_labels, breaks = legend_breaks, guide = "legend"
+    ) +
+    geom_point() +
+    theme_minimal() +
+    ylim(c(0, 1)) +
+    geom_hline(yintercept = 0.95, lty = 2, col = "red") +
+    facet_wrap(vars(get("estimator")), labeller = est_labeler) +
+    xlab("True value") +
+    ylab("Coverage") +
+    ggtitle(titlename)
+}
 ```
 
+## $R$
 
-```{r}
-sim_based_testing <- sim_based_testing |>
-  mutate(r_covered = (r_true > r_low & r_true < r_high)) |>
-  mutate(k_covered = (k_true > k_low & k_true < k_high))
+Coverage of $R$ by Bayesian credible intervals is generally good except for smaller $R$, where it is abysmal.
+Confidence intervals are also generally close to the nominal coverage, though they have some difficulties around $R \approx 1$ (especially for large $k$).
+For both approaches, more data is helpful.
+
+### By number of chains in dataset
+```{r, message=FALSE, warning=FALSE}
+plot_coverage("r", "n_chains")
+```
+
+### By $k$
+```{r, message=FALSE, warning=FALSE}
+plot_coverage("r", "k_true")
+```
+
+## $k$
+Confidence intervals for $k$ display somewhat less parameter sensitivity than credible intervals, the latter of which have very poor coverage for small $R$.
+Outside the small $R$ regime, coverage for $k$ is generally good for both CIs, with credible  intervals appearing to be somewhat closer to the nominal 95% coverage.
+
+### By number of chains in dataset
+```{r, message=FALSE, warning=FALSE}
+plot_coverage("k", "n_chains")
+```
+
+### By $R$
+
+```{r, message=FALSE, warning=FALSE}
+plot_coverage("k", "r_true")
+```
+
+# CI widths
+
+Coverage is not the only thing we care about with our CIs.
+We also care about how narrow or wide the intervals are: all else equal, we'd prefer a narrower interval.
+
+Here, all else is not always equal (coverage is sometimes meaningfully different), but credible intervals are often much, much narrower than confidence intervals.
+
+Below are plots showing the ratio of the widths of confidence to credible intervals for $R$ and $k$, grouped by the true (simulating) values.
+We suppress $R = 2$ in order to see the rest of the values, as at $R = 2$ a good proportion of confidence intervals for $R$ are essentially infinite.
+
+```{r, warning=FALSE}
+bayes <- sim_based_testing |>
+  mutate(width = r_high - r_low) |>
+  filter(estimator == "bayes")
+
+maxlik <- sim_based_testing |>
+  mutate(width = r_high - r_low) |>
+  filter(estimator == "maxlik")
+
+bayes |>
+  filter(r_true < 2) |>
+  inner_join(
+    maxlik,
+    by = c("index", "n_chains", "r_true", "k_true"),
+    suffix = c("_bayes", "_maxlik")
+  ) |>
+  mutate(width_ratio = width_maxlik / width_bayes) |>
+  ggplot(aes(x = factor(r_true), y = (width_ratio))) +
+  geom_boxplot(outliers = FALSE) +
+  geom_hline(yintercept = 1.0, lty = 2, lwd = 1.25, col = "red") +
+  scale_y_continuous(trans = "log") +
+  theme_minimal() +
+  xlab("True R") +
+  ylab("CI width ratio for R")
+```
+
+```{r, warning=FALSE}
+bayes <- sim_based_testing |>
+  mutate(width = k_high - k_low) |>
+  filter(estimator == "bayes")
+
+maxlik <- sim_based_testing |>
+  mutate(width = k_high - k_low) |>
+  filter(estimator == "maxlik")
+
+bayes |>
+  inner_join(
+    maxlik,
+    by = c("index", "n_chains", "r_true", "k_true"),
+    suffix = c("_bayes", "_maxlik")
+  ) |>
+  mutate(width_ratio = width_maxlik / width_bayes) |>
+  ggplot(aes(x = factor(k_true), y = width_ratio)) +
+  geom_boxplot(outliers = FALSE) +
+  geom_hline(yintercept = 1.0, lty = 2, lwd = 1.25, col = "red") +
+  scale_y_continuous(trans = "log") +
+  theme_minimal() +
+  xlab("True k") +
+  ylab("CI width ratio for k")
 ```
