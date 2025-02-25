@@ -21,6 +21,11 @@ knitr::opts_chunk$set(
 A Gamma prior is placed on $R$, and a HalfNormal on $1 / \sqrt{k}$.
 The user may specify hyperparameters of the Gamma distribution (its shape and rate) and the HalfNormal (its scale parameter).
 Samples from the default prior are available in the package data object `prior_predictive`, which we will use to visualize the priors.
+If one wishes to draw more samples, or explore alternative hyperparameters, modify the following code used to produce the pre-packaged data.
+
+
+```{r, eval=FALSE, file="../data-raw/prior.R"}
+```
 
 ## Default prior on $R$
 
@@ -69,7 +74,7 @@ The prior pulls towards larger $k$, which, handwavily, means the model should pr
 The default prior has a median $k$ of 1, placing 50% of the prior mass in both the strongly-overdispersed $k < 1$ regime and the less-overdispersed $k \geq 1$ regime.
 
 The (implicit) default prior on $k$ has heavy tails, reflecting the prior's pull towards the Poisson regime of $k \to \infty$.
-Truncating to $k \leq 100$ for visualization purposes, the (conditional implicit) prior is
+Truncating to $k \leq 10$ for visualization purposes, the (conditional implicit) prior is
 ```{r, echo=FALSE, message=FALSE}
 prior_predictive |>
   dplyr::filter(dispersion <= 10) |>
@@ -80,6 +85,9 @@ prior_predictive |>
 ```
 
 ## Default prior predictive offspring distribution
+
+Conditioned on $R$ and $k$, the offspring distribution is negative binomial.
+By marginalizing this conditional distribution across the priors on $R$ and $k$, we obtain the prior predictive offspring distribution.
 ```{r, echo=FALSE, message=FALSE}
 prior_predictive |>
   ggplot(aes(x = offspring_count, y = after_stat(density))) +
@@ -93,7 +101,7 @@ prior_predictive |>
 The prior predictive distribution on chain sizes has two components.
 There is a `r {round(mean(is.infinite(prior_predictive$chain_size)), 2) * 100}`% chance of a non-extinct (infinite) chain (see the vignette "Advanced data" for more on this).
 Conditional on extinction (finite size), there are long tails, with a `r round(mean(prior_predictive$chain_size > 100), 2) * 100`% chance of a chain size above 100.
-Focusing in on chains of 100 or fewer for visualization, the (conditional) prior distribution is:
+Focusing in on chains of 100 or fewer for visualization, the (marginal with respect to $R$ and $k$, conditional with respect to the chain size) prior distribution is:
 ```{r, echo=FALSE, message=FALSE}
 prior_predictive |>
   dplyr::filter(chain_size <= 100) |>
