@@ -76,8 +76,8 @@ data {
   real ccdf_exps[dim_ccdf]; //  exponents on CCDFs in the likelihood (# censored at this size - # observations which are conditioned to be >= this size)
 
   /* Hyperpriors */
-  real mu_r_eff;
-  real<lower=0.0> sigma_r_eff;
+  real<lower=0.0> shape_r_eff;
+  real<lower=0.0> rate_r_eff;
   real<lower=0.0> sigma_inv_sqrt_dispersion;
 
   /* Toggles */
@@ -108,7 +108,7 @@ transformed parameters {
 }
 model {
   if (use_prior == 1) {
-    r_eff ~ lognormal(mu_r_eff, sigma_r_eff);
+    r_eff ~ gamma(shape_r_eff, rate_r_eff);
     inv_sqrt_dispersion ~ normal(0.0, sigma_inv_sqrt_dispersion);
   }
 
