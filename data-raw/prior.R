@@ -6,7 +6,7 @@ set.seed(42)
 n_draw <- 1e4
 
 prior_predictive <- data.frame(
-  r_eff = rlnorm(n_draw, 0.0, 0.421404),
+  r_eff = rgamma(n_draw, 2.183089, 2.183089),
   dispersion = 1 / (abs(rnorm(n_draw, 0.0, 1.482602))^2)
 ) |>
   dplyr::mutate(
