@@ -8,7 +8,7 @@ Draws samples from the priors on R and k, and from those the prior predictive of
 Creates `data(prior_predictive)`.
 
 ## `sbc.R`
-:warning: Assumes that `prior.R` has been run and the correct priors have been drawn for for R and k.
+:warning: Assumes that `prior.R` has been run and the correct priors have been drawn for R and k.
 
 Uses the prior samples on R and k from `prior.R` to simulate 1000 datasets under the prior predictive, each with 25 observations.
 Runs `fit_nbbp_homogenous_bayes` on all, saves two dataframes as package data

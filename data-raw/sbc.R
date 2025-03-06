@@ -2,7 +2,7 @@ set.seed(42)
 library(nbbp)
 
 nsim <- 1000
-nchains <- 25
+nobs <- 25
 
 #############
 # Functions #
@@ -78,7 +78,7 @@ prior_predictive_datasets <- prior_predictive |>
   dplyr::select(r_eff, dispersion, index) |>
   dplyr::mutate(
     chain_size = purrr::map2(r_eff, dispersion, function(r_eff, dispersion) {
-      rnbbp(n = nchains, r = r_eff, k = dispersion)
+      rnbbp(n = nobs, r = r_eff, k = dispersion)
     })
   ) |>
   tidyr::unnest(chain_size)
@@ -90,7 +90,7 @@ sim_based_calibration <- prior_predictive_datasets |>
       list(r_eff, dispersion, chain_size, index),
       function(r_eff, dispersion, chain_size, index) {
         tmp <- capture.output({
-          res <- do_one_bayes(r_eff, dispersion, chain_size, nobs = 25, seed = index)
+          res <- do_one_bayes(r_eff, dispersion, chain_size, nobs = nobs, seed = index)
         })
         return(res)
       }

@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 One sanity check of a Bayesian model implementation is simulation-based calibration.
 We simulate from a model by drawing a dataset from the prior predictive distribution.
 Then we fit the model and check whether the _true_ value was covered at many quantiles.
-If we repeat this process enough times, the proportion of true values covered at the $x$th percentile should be $x$.
+If we repeat this process enough times, the percentage of true values covered at the $x$th percentile should be $x$.
 That is, when we draw from the prior predictive, the posterior should obey frequentist coverage properties.
 
 We can also examine how well point estimates (say, the posterior mean) recapitulate the truth along the way.
@@ -124,18 +124,32 @@ sbc_ests |>
 
 ### MCMC behavior
 
-We can also see that most MCMC performed well, with a few exceptions.
-```{r mcmc}
-sbc_ests |>
-  dplyr::select(c("min_ess", "max_rhat", "num_low_bfmi", "num_divergent", "num_max_treedepth")) |>
-  summary()
-```
-
-Filtering for large `n_eff` and small `Rhat`, as was done to obtain the quantiles in `sbc_quants` removes the runs with pathologically bad `num_max_treedepth` as well.
+We can also see that most MCMC performed well, with a few exceptions that are visible mostly through the limits chosen for the axes when we plot all the diagnostics.
 
 ```{r mcmc 2}
 sbc_ests |>
+  dplyr::select(c("min_ess", "max_rhat", "num_low_bfmi", "num_divergent", "num_max_treedepth")) |>
+  dplyr::mutate(index = dplyr::row_number()) |>
+  tidyr::pivot_longer(!index) |>
+  dplyr::select(!index) |>
+  ggplot(aes(x = value)) +
+  theme_minimal() +
+  geom_histogram(bins = 25) +
+  facet_wrap(~name, ncol = 2, scales = "free_x")
+```
+
+
+Filtering for large `n_eff` and small `Rhat`, as was done to obtain the quantiles in `sbc_quants` removes the runs with pathologically bad `num_max_treedepth` as well.
+
+```{r mcmc 3}
+sbc_ests |>
   dplyr::filter(min_ess > 1000 | max_rhat < 1.005) |>
   dplyr::select(c("min_ess", "max_rhat", "num_low_bfmi", "num_divergent", "num_max_treedepth")) |>
-  summary()
+  dplyr::mutate(index = dplyr::row_number()) |>
+  tidyr::pivot_longer(!index) |>
+  dplyr::select(!index) |>
+  ggplot(aes(x = value)) +
+  theme_minimal() +
+  geom_histogram(bins = 25) +
+  facet_wrap(~name, ncol = 2, scales = "free_x")
 ```

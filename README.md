@@ -8,6 +8,8 @@
 
 The R package can be installed with `remotes::install_github("CDCGov/nbbp")`, to install just the package, or with `remotes::install_github("CDCGov/nbbp", build_vignettes = TRUE)` to install the package and build vignettes.
 
+(You can also clone or download this repository, `cd` to the resulting folder, and install the package with `devtools::install()` or, to build the vignettes, `devtools::install(build_vignettes = TRUE)`.)
+
 Some of the package's dependencies require additional system-level dependencies to work, such as [pandoc](https://pandoc.org/).
 The [Posit Package Manager](https://packagemanager.posit.co/client/#/) is useful for determining what needs to be run to install these on your operating system, e.g. [for rstan](https://packagemanager.posit.co/client/#/repos/cran/packages/overview?search=rstan).
 
