@@ -1,10 +1,8 @@
-co---
 title: "Estimator performance"
 output:
-  rmarkdown::html_vignette:
+  html_vignette:
     fig_width: 7
     fig_height: 5
-    code_folding: "hide"
 vignette: >
   %\VignetteIndexEntry{Estimator performance}
   %\VignetteEngine{knitr::rmarkdown}
@@ -14,7 +12,8 @@ vignette: >
 ```{r, echo = F}
 library(knitr)
 knitr::opts_chunk$set(
-  out.extra = 'style="display:block; margin:auto;"'
+  out.extra = 'style="display:block; margin:auto;"',
+  code_folding = "hide"
 )
 ```
 
@@ -38,12 +37,51 @@ This is available as the package data `sim_based_testing`.
 The following code defines a plotting function to compare Bayesian and maximum likelihood point estimates side-by-side, while allowing us to  control for and examine the impact of an additional variable on performance (namely, the other parameter in the model, and the amount of data).
 
 ```{r}
-est_labeler <- as_labeller(c(
-  "bayes" = "Bayesian",
+point_est_labeler <- as_labeller(c(
+  "bayes" = "Posterior median",
   "maxlik" = "Maximum likelihood"
 ))
 
-plot_point_ests <- function(param, covar) {
+plot_point_ests <- function(param, ylim) {
+  truth <- ifelse(param == "r", "r_true", "k_true")
+  estimated <- ifelse(param == "r", "r_point", "k_point")
+  titlename <- ifelse(param == "r", "Estimation of R", "Estimation of k")
+  sim_based_testing$factor_truth <- factor(
+    sim_based_testing[[truth]],
+    levels = sort(unique(sim_based_testing[[truth]]))
+  )
+  sim_based_testing$estimator <- factor(
+    sim_based_testing[["estimator"]] |> point_est_labeler() |> unlist(),
+    levels = c("Posterior median", "Maximum likelihood")
+  )
+  boxes <- ggplot(data = sim_based_testing, aes(
+    x = .data[["factor_truth"]],
+    y = .data[[estimated]],
+    fill = .data[["estimator"]]
+  )) +
+    geom_boxplot(outliers = FALSE, alpha = 0.5) +
+    theme_minimal() +
+    xlab("True value") +
+    ylab("Estimated value") +
+    ggtitle(titlename)
+
+  true_vals <- sort(unique(sim_based_testing[[truth]]))
+  for (i in seq_along(true_vals)) {
+    segment <- local({
+      i <- i
+      geom_segment(
+        aes(x = i - 0.5, xend = i + 0.5, y = true_vals[i]),
+        col = "red",
+        lty = 2
+      )
+    })
+    boxes <- boxes + segment
+  }
+
+  return(boxes)
+}
+
+plot_point_ests_covar <- function(param, covar) {
   truth <- ifelse(param == "r", "r_true", "k_true")
   estimated <- ifelse(param == "r", "r_point", "k_point")
   titlename <- ifelse(param == "r", "Estimation of R", "Estimation of k")
@@ -62,7 +100,7 @@ plot_point_ests <- function(param, covar) {
   )) +
     geom_boxplot(outliers = FALSE, alpha = 0.5) +
     scale_fill_viridis_d("viridis", name = covar) +
-    facet_wrap(vars(get("estimator")), labeller = est_labeler) +
+    facet_wrap(vars(get("estimator")), labeller = point_est_labeler) +
     theme_minimal() +
     xlab("True value") +
     ylab("Estimated value") +
@@ -84,38 +122,64 @@ plot_point_ests <- function(param, covar) {
   return(boxes)
 }
 ```
+
 ## $R$
 
-As we can see below, maximum likelihood inference generally does a decent job estimating small $R$, but starts having trouble near 1, while Bayesian inference does best around 1.
-Increasing amounts of data are helpful, as expected, though the effects are much more pronounced for maximum likelihood inference.
-Larger true values of $k$ (regimes with less overdispersion) make inference better.
-
-### By number of chains in dataset
+First, let us examine estimation of $R$ aggregated across all simulated values of $k$ and all dataset sizes
+We can see that the two approaches have some similar behaviors, in that they both tend to underestimate $R$ when the true $R \approx 1$ and neither does well when the true $R = 2$
+But we can also see that they behave differently across the space of true $R$ values.
+It would seem that for small true $R$, maximum likelihood yields better estimates, but for $R \gtrsim 0.75$ the posterior median is a better estimator, or at least not a worse one.
 
 ```{r, message=FALSE, warning=FALSE}
-plot_point_ests("r", "n_chains")
+plot_point_ests("r")
 ```
 
-### By $k$
+In the plots below, we examine how estimation of $R$ is impacted by the size of the dataset and the (true) value of $k$.
+Three things are evident from these plots.
+1. Estimation gets better as datasets get larger.
+2. Estimation gets better as the (true) $k$ gets larger.
+3. The posterior median is less sensitive to (true) $k$ than maximum likelihood.
+While the first of these makes immediate sense, the other two require some explanation.
+
+There are two ways we can intuitively understand the second observation.
+What we might term the estimator interpretation starts with the facts that $R$ is a mean and $k$ controls the variance (recall that larger $k$ means smaller variance).
+An estimator's variability in estimating a mean is a function of two things, it decreases with increasing sample size and increases with increasing variance of the underlying distribution.
+Think of, for example, the formula for the [standard error of the mean.](https://en.wikipedia.org/wiki/Standard_error#Standard_error_of_the_sample_mean)
+This doesn't explain why we underestimate, though, just why we mis-estimate.
+We can explain that with what we might term the correlation interpretation.
+This starts with the fact that both small $R$ and small $k$ produce higher extinction probabilities.
+Thus, we might mistake a smaller $k$ for a smaller $R$.
+Providing some credence to this possibility, ws we will see in a later section, $k$ is often severely over-estimated.
+
+The relative lack of posterior median sensitivity to the true value of $k$ is definitely an effect of the prior.
+In particular, as we see below, maximum likelihood has serious difficulties estimating $k$, likely because the likelihood surface is uninformative.
+In these regimes, the prior will have a notable impact on the posterior, and prior on $k$ has a lot of mass on $k$ in the regions used in simulation.
+This is a strength of the Bayesian approach: it lets us inform how the posterior should look when the likelihood provides little information.
 
 ```{r, message=FALSE, warning=FALSE}
-plot_point_ests("r", "k_true")
+plot_point_ests_covar("r", "n_chains")
+```
+
+```{r, message=FALSE, warning=FALSE}
+plot_point_ests_covar("r", "k_true")
 ```
 
 ## $k$
-Maximum likelihood inference appears to provide significantly more variable estimates of $k$ than Bayesian inference, and is notably worse at larger values of $k$ than smaller.
-Both do worse when $R$ is also small, though maximum likelihood does best at middling values while Bayesian inference seems to plateau.
 
-### By number of chains in dataset
+The posterior median is clearly a much better estimator of $k$ than the maximum likelihood value.
+It is also less sensitive to the size of the dataset and to the true value of $R$.
+The reasons for this, and for maximum likelihood's greater sensitivity, are the inverses of the reasons described above for why estimation of $R$ looks the way it does.
 
 ```{r, message=FALSE, warning=FALSE}
-plot_point_ests("k", "n_chains") + scale_y_continuous(trans = "log")
+plot_point_ests("k") + coord_cartesian(ylim = c(0, 10))
 ```
 
-### By $R$
+```{r, message=FALSE, warning=FALSE}
+plot_point_ests_covar("k", "n_chains") + coord_cartesian(ylim = c(0, 10))
+```
 
 ```{r, message=FALSE, warning=FALSE}
-plot_point_ests("k", "r_true") + scale_y_continuous(trans = "log")
+plot_point_ests_covar("k", "r_true") + coord_cartesian(ylim = c(0, 10))
 ```
 
 # Coverage of 95% CIs
@@ -131,30 +195,120 @@ That is, 96% coverage would be preferable to 94%, but 94% is still better than 1
 
 [^1]: That is, assuming we want good frequentist properties from our Bayesian credible intervals. For the purposes of this comparison, we do. We leave philisophical matters aside as out of scope.
 ```{r}
-plot_coverage <- function(param, covar) {
+coverage_labeler <- as_labeller(c(
+  "bayes" = "Credible interval",
+  "maxlik" = "Confidence interval"
+))
+
+plot_coverage <- function(param, ci_alpha = 0.05) {
   truth <- ifelse(param == "r", "r_true", "k_true")
   low <- ifelse(param == "r", "r_low", "k_low")
   high <- ifelse(param == "r", "r_high", "k_high")
   estimated <- ifelse(param == "r", "r_point", "k_point")
   titlename <- ifelse(param == "r", "Coverage of R", "Coverage of k")
-  sim_based_testing$color_col <- col_numeric("viridis", domain = NULL)(sim_based_testing[[covar]])
-  sim_based_testing$covered <- sim_based_testing[[estimated]] > sim_based_testing[[low]] &
-    sim_based_testing[[estimated]] < sim_based_testing[[high]]
-  legend_labels <- unique(sim_based_testing[[covar]])
-  legend_breaks <- unique(sim_based_testing[["color_col"]])
+  sim_based_testing$factor_truth <- factor(
+    sim_based_testing[[truth]],
+    levels = sort(unique(sim_based_testing[[truth]]))
+  )
+  sim_based_testing$estimator <- factor(
+    sim_based_testing[["estimator"]] |> coverage_labeler() |> unlist(),
+    levels = c("Credible interval", "Confidence interval")
+  )
   sim_based_testing |>
     mutate(covered = r_true > r_low & r_true < r_high) |>
-    group_by_at(c("estimator", covar, truth, "color_col")) |>
-    summarize(coverage = mean(get("covered"), na.rm = TRUE)) |>
-    ggplot(aes(x = .data[[truth]], y = .data[["coverage"]], col = .data[["color_col"]])) +
-    scale_color_identity(
-      name = covar, labels = legend_labels, breaks = legend_breaks, guide = "legend"
+    group_by_at(c("estimator", "factor_truth")) |>
+    summarize(
+      coverage = mean(get("covered"), na.rm = TRUE),
+      sample_size = sum(!(is.na(get("covered"))))
+    ) |>
+    ungroup() |>
+    mutate(
+      q_lo = case_when(
+        coverage == 0.0 ~ 0.0,
+        coverage == 1.0 ~ !!ci_alpha,
+        .default = !!(ci_alpha / 2)
+      ),
+      q_hi = case_when(
+        coverage == 0.0 ~ 1 - !!ci_alpha,
+        coverage == 1.0 ~ 1.0,
+        .default = 1 - !!(ci_alpha / 2)
+      )
+    ) |>
+    mutate(
+      coverage_lo = qbeta(q_lo, coverage * sample_size + 0.5, (1 - coverage) * sample_size + 0.5),
+      coverage_hi = qbeta(q_hi, coverage * sample_size + 0.5, (1 - coverage) * sample_size + 0.5)
+    ) |>
+    ggplot(aes(
+      x = .data[["factor_truth"]],
+      y = .data[["coverage"]],
+      col = .data[["estimator"]]
+    )) +
+    geom_pointrange(
+      aes(ymin = coverage_lo, ymax = coverage_hi),
+      fatten = 2,
+      position = position_dodge2(width = 0.75)
     ) +
-    geom_point() +
     theme_minimal() +
     ylim(c(0, 1)) +
     geom_hline(yintercept = 0.95, lty = 2, col = "red") +
-    facet_wrap(vars(get("estimator")), labeller = est_labeler) +
+    xlab("True value") +
+    ylab("Coverage") +
+    ggtitle(titlename)
+}
+
+plot_coverage_covar <- function(param, covar, ci_alpha = 0.05) {
+  truth <- ifelse(param == "r", "r_true", "k_true")
+  low <- ifelse(param == "r", "r_low", "k_low")
+  high <- ifelse(param == "r", "r_high", "k_high")
+  estimated <- ifelse(param == "r", "r_point", "k_point")
+  titlename <- ifelse(param == "r", "Coverage of R", "Coverage of k")
+  sim_based_testing$factor_truth <- factor(
+    sim_based_testing[[truth]],
+    levels = sort(unique(sim_based_testing[[truth]]))
+  )
+  sim_based_testing$factor_covar <- factor(
+    sim_based_testing[[covar]],
+    levels = sort(unique(sim_based_testing[[covar]]))
+  )
+  sim_based_testing |>
+    mutate(covered = r_true > r_low & r_true < r_high) |>
+    group_by_at(c("estimator", covar, "factor_covar", "factor_truth")) |>
+    summarize(
+      coverage = mean(get("covered"), na.rm = TRUE),
+      sample_size = sum(!(is.na(get("covered"))))
+    ) |>
+    ungroup() |>
+    mutate(
+      q_lo = case_when(
+        coverage == 0.0 ~ 0.0,
+        coverage == 1.0 ~ !!ci_alpha,
+        .default = !!(ci_alpha / 2)
+      ),
+      q_hi = case_when(
+        coverage == 0.0 ~ 1 - !!ci_alpha,
+        coverage == 1.0 ~ 1.0,
+        .default = 1 - !!(ci_alpha / 2)
+      )
+    ) |>
+    mutate(
+      coverage_lo = qbeta(q_lo, coverage * sample_size + 0.5, (1 - coverage) * sample_size + 0.5),
+      coverage_hi = qbeta(q_hi, coverage * sample_size + 0.5, (1 - coverage) * sample_size + 0.5)
+    ) |>
+    ggplot(aes(
+      x = .data[["factor_truth"]],
+      y = .data[["coverage"]],
+      col = .data[["factor_covar"]]
+    )) +
+    scale_color_viridis_d("viridis", name = covar) +
+    geom_pointrange(
+      aes(ymin = coverage_lo, ymax = coverage_hi),
+      fatten = 2,
+      position = position_dodge2(width = 0.75)
+    ) +
+    theme_minimal() +
+    ylim(c(0, 1)) +
+    geom_hline(yintercept = 0.95, lty = 2, col = "red") +
+    facet_wrap(vars(get("estimator")), labeller = coverage_labeler) +
     xlab("True value") +
     ylab("Coverage") +
     ggtitle(titlename)
@@ -164,32 +318,44 @@ plot_coverage <- function(param, covar) {
 ## $R$
 
 Coverage of $R$ by Bayesian credible intervals is generally good except for smaller $R$, where it is abysmal.
-Confidence intervals are also generally close to the nominal coverage, though they have some difficulties around $R \approx 1$ (especially for large $k$).
-For both approaches, more data is helpful.
+Confidence intervals are also generally close to the nominal coverage, though the nominal coverage is low for from $R \approx 1$ until $R \approx 2$.
 
-### By number of chains in dataset
 ```{r, message=FALSE, warning=FALSE}
-plot_coverage("r", "n_chains")
+plot_coverage("r")
 ```
 
-### By $k$
+For both approaches, more data is helpful, though it has a much bigger effect on confidence intervals.
+The coverage dip above 1 disappears by the time there are at least 40 observations in the dataset.
+Credible intervals show less sensitivity to the (true) value of $k$ than confidence intervals
+
 ```{r, message=FALSE, warning=FALSE}
-plot_coverage("r", "k_true")
+plot_coverage_covar("r", "n_chains")
+```
+
+```{r, message=FALSE, warning=FALSE}
+plot_coverage_covar("r", "k_true")
 ```
 
 ## $k$
-Confidence intervals for $k$ display somewhat less parameter sensitivity than credible intervals, the latter of which have very poor coverage for small $R$.
-Outside the small $R$ regime, coverage for $k$ is generally good for both CIs, with credible  intervals appearing to be somewhat closer to the nominal 95% coverage.
+Coverage of $k$ is much better for confidence intervals than credible intervals.
+
+```{r, message=FALSE, warning=FALSE}
+plot_coverage("k")
+```
+
+Coverage of credible intervals for $R \gtrapprox 0.5$, however, is quite good.
+Analogously with intervals for $R$, credible intervals for $k$ are less sensitive to $R$ than confidence intervals.
+The effect of larger dataset sizes is somewhat more subdued than for $R$, but more data does improve coverage.
 
 ### By number of chains in dataset
 ```{r, message=FALSE, warning=FALSE}
-plot_coverage("k", "n_chains")
+plot_coverage_covar("k", "n_chains")
 ```
 
 ### By $R$
 
 ```{r, message=FALSE, warning=FALSE}
-plot_coverage("k", "r_true")
+plot_coverage_covar("k", "r_true")
 ```
 
 # CI widths
@@ -198,8 +364,12 @@ Coverage is not the only thing we care about with our CIs.
 We also care about how narrow or wide the intervals are: all else equal, we'd prefer a narrower interval.
 
 Here, all else is not always equal (coverage is sometimes meaningfully different), but credible intervals are often much, much narrower than confidence intervals.
+For $R$, the width of credible intervals is often 50\% or less of the width of confidence intervals.
+For $k$, the width of credible intervals can be less than 1\% of the width of confidence intervals.
+This is not an absolute for either $R$ or $k$; sometimes credible intervals are wider, though they are never nearly as much wider than confidence intervals than vice-versa.
 
-Below are plots showing the ratio of the widths of confidence to credible intervals for $R$ and $k$, grouped by the true (simulating) values.
+Below are plots showing the ratio of the widths of credible to confidence intervals for $R$ and $k$, grouped by the true (simulating) values.
+The horizontal line is at 1, highlighting the divide between credible intervals being smaller (ratio below 1) and larger (ratio above 1) than confidence intervals.
 We suppress $R = 2$ in order to see the rest of the values, as at $R = 2$ a good proportion of confidence intervals for $R$ are essentially infinite.
 
 ```{r, warning=FALSE}
@@ -218,11 +388,11 @@ bayes |>
     by = c("index", "n_chains", "r_true", "k_true"),
     suffix = c("_bayes", "_maxlik")
   ) |>
-  mutate(width_ratio = width_maxlik / width_bayes) |>
+  mutate(width_ratio = width_bayes / width_maxlik) |>
   ggplot(aes(x = factor(r_true), y = (width_ratio))) +
   geom_boxplot(outliers = FALSE) +
   geom_hline(yintercept = 1.0, lty = 2, lwd = 1.25, col = "red") +
-  scale_y_continuous(trans = "log") +
+  scale_y_continuous(trans = "log2") +
   theme_minimal() +
   xlab("True R") +
   ylab("CI width ratio for R")
@@ -243,11 +413,11 @@ bayes |>
     by = c("index", "n_chains", "r_true", "k_true"),
     suffix = c("_bayes", "_maxlik")
   ) |>
-  mutate(width_ratio = width_maxlik / width_bayes) |>
+  mutate(width_ratio = width_bayes / width_maxlik) |>
   ggplot(aes(x = factor(k_true), y = width_ratio)) +
   geom_boxplot(outliers = FALSE) +
   geom_hline(yintercept = 1.0, lty = 2, lwd = 1.25, col = "red") +
-  scale_y_continuous(trans = "log") +
+  scale_y_continuous(trans = "log10") +
   theme_minimal() +
   xlab("True k") +
   ylab("CI width ratio for k")
