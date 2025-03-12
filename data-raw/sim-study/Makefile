@@ -40,15 +40,11 @@ clean:
 	rm -f n.txt
 	rm -f r.txt
 	rm -f k.txt
-	rm -rf par
-	rm -rf data
-	rm -rf bayes
-	rm -rf maxlik
+	rm par/*
+	rm data/*
+	rm bayes/*
+	rm maxlik/*
 	mkdir par
 	mkdir data
 	mkdir bayes
 	mkdir maxlik
-	cat <<EOF > par/.placeholder
-	cat <<EOF > data/.placeholder
-	cat <<EOF > bayes/.placeholder
-	cat <<EOF > maxlik/.placeholder

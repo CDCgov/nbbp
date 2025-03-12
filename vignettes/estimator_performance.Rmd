@@ -47,8 +47,8 @@ plot_point_ests <- function(param, ylim) {
   estimated <- ifelse(param == "r", "r_point", "k_point")
   titlename <- ifelse(param == "r", "Estimation of R", "Estimation of k")
   sim_based_testing$factor_truth <- factor(
-    sim_based_testing[[truth]],
-    levels = sort(unique(sim_based_testing[[truth]]))
+    round(sim_based_testing[[truth]], 2),
+    levels = round(sort(unique(sim_based_testing[[truth]])), 2)
   )
   sim_based_testing$estimator <- factor(
     sim_based_testing[["estimator"]] |> point_est_labeler() |> unlist(),
@@ -86,8 +86,8 @@ plot_point_ests_covar <- function(param, covar) {
   estimated <- ifelse(param == "r", "r_point", "k_point")
   titlename <- ifelse(param == "r", "Estimation of R", "Estimation of k")
   sim_based_testing$factor_truth <- factor(
-    sim_based_testing[[truth]],
-    levels = sort(unique(sim_based_testing[[truth]]))
+    round(sim_based_testing[[truth]], 2),
+    levels = round(sort(unique(sim_based_testing[[truth]])), 2)
   )
   sim_based_testing$factor_covar <- factor(
     sim_based_testing[[covar]],
@@ -186,6 +186,12 @@ plot_point_ests_covar("k", "r_true") + coord_cartesian(ylim = c(0, 10))
 
 The following code defines a plotting function to compare the coverage of Bayesian credible intervals with confidence intervals from maximum likelihood inference side-by-side, while allowing us to  control for and examine the impact of an additional variable on performance (namely, the other parameter in the model, and the amount of data).
 
+In the plots, the _points_ display the observed coverage.
+That is, if the true value is covered in 50 out of 100 replicate analyses, the point shows this as 0.5.
+However, we are estimating coverage, and if we simulated 100 more datasets, we might see 47 covered, or 55.
+Thus, we also plot _error bars_ displaying a measure of this sampling-based uncertainty about the estimated coverage.
+(In particular, we plot the 95% [Jeffreys CI](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Jeffreys_interval)).
+
 Note that "good" performance can be counterintuitive here.
 The simulations record the 95% CIs for both approaches, which means that the ideal coverage is 95%.[^1]
 That is, a "good" 95% CI will be wrong 5% of the time.
@@ -207,8 +213,8 @@ plot_coverage <- function(param, ci_alpha = 0.05) {
   estimated <- ifelse(param == "r", "r_point", "k_point")
   titlename <- ifelse(param == "r", "Coverage of R", "Coverage of k")
   sim_based_testing$factor_truth <- factor(
-    sim_based_testing[[truth]],
-    levels = sort(unique(sim_based_testing[[truth]]))
+    round(sim_based_testing[[truth]], 2),
+    levels = round(sort(unique(sim_based_testing[[truth]])), 2)
   )
   sim_based_testing$estimator <- factor(
     sim_based_testing[["estimator"]] |> coverage_labeler() |> unlist(),
@@ -263,8 +269,8 @@ plot_coverage_covar <- function(param, covar, ci_alpha = 0.05) {
   estimated <- ifelse(param == "r", "r_point", "k_point")
   titlename <- ifelse(param == "r", "Coverage of R", "Coverage of k")
   sim_based_testing$factor_truth <- factor(
-    sim_based_testing[[truth]],
-    levels = sort(unique(sim_based_testing[[truth]]))
+    round(sim_based_testing[[truth]], 2),
+    levels = round(sort(unique(sim_based_testing[[truth]])), 2)
   )
   sim_based_testing$factor_covar <- factor(
     sim_based_testing[[covar]],
@@ -414,7 +420,7 @@ bayes |>
     suffix = c("_bayes", "_maxlik")
   ) |>
   mutate(width_ratio = width_bayes / width_maxlik) |>
-  ggplot(aes(x = factor(k_true), y = width_ratio)) +
+  ggplot(aes(x = factor(round(k_true, 2)), y = width_ratio)) +
   geom_boxplot(outliers = FALSE) +
   geom_hline(yintercept = 1.0, lty = 2, lwd = 1.25, col = "red") +
   scale_y_continuous(trans = "log10") +
