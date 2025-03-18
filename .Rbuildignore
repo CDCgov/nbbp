@@ -6,3 +6,5 @@
 \.secrets\.baseline
 \.pre-commit-config.yaml
 LICENSE
+^doc$
+^Meta$
