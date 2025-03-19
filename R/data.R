@@ -239,3 +239,37 @@
 #' abline(a = 0, b = 1)
 #' }
 "sbc_ests"
+
+#' High-level performance results in simulations
+#'
+#' Analyses of a grid (over R, k, and number of chains) of datasets.
+#' Point (posterior median, maximum likelihood) and interval (95% credible interval,
+#' 95% confidence interval) estimates from both Bayesian and maximum likelihood analyses.
+#'
+#' @docType data
+#' @usage
+#' data(sim_based_testing)
+#' @format data.frame with true values and estimates.
+#' \describe{
+#'   \item{index}{Simulation index for replicate simulations with shared (R, k, n_chains).}
+#'   \item{n_chains}{The number of chains in the simulated dataset.}
+#'   \item{r_true}{The true simulating value of R.}
+#'   \item{k_true}{The true simulating value of k.}
+#'   \item{r_point}{The posterior median or maximum likelihood value of R.}
+#'   \item{k_point}{The posterior median or maximum likelihood value of k.}
+#'   \item{r_low}{The lower bound of a 95% credible of confidence interval for R.}
+#'   \item{r_high}{The upper bound of a 95% credible of confidence interval for R.}
+#'   \item{k_low}{The lower bound of a 95% credible of confidence interval for k.}
+#'   \item{k_high}{The upper bound of a 95% credible of confidence interval for k.}
+#'   \item{estimator}{Type of analysis, bayes (Bayesian) or maxlik (maximum likelihood).}
+#' }
+#' @keywords datasets
+#' @source Generated in R using nbbp.
+#'
+#' @examples
+#' \dontrun{
+#' data(sbc_quants)
+#' plot(sim_based_testing$r_true, sim_based_testing$r_point)
+#' abline(a = 0, b = 1)
+#' }
+"sim_based_testing"
