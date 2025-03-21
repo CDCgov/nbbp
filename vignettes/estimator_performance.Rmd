@@ -1,21 +1,15 @@
+---
 title: "Estimator performance"
 output:
   html_vignette:
     fig_width: 7
     fig_height: 5
+    code_folding: hide
 vignette: >
   %\VignetteIndexEntry{Estimator performance}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-
-```{r, echo = F}
-library(knitr)
-knitr::opts_chunk$set(
-  out.extra = 'style="display:block; margin:auto;"',
-  code_folding = "hide"
-)
-```
 
 ```{r, message=FALSE, warning=FALSE}
 library(nbbp)
@@ -32,9 +26,9 @@ The data used to do this comes from simulating 100 datasets each at a grid of $R
 For each simulated dataset, `fit_nbbp_homogenous_bayes` and `fit_nbbp_homogenous_ml` were used to infer parameters, recording point estimates (posterior median, maximum likelihood) and 95% uncertainty (credible, confidence) intervals were recorded.
 This is available as the package data `sim_based_testing`.
 
-# Point estimation performance
+Plotting functions are provided to compare estimator performance for both point and interval estimates, but for clarity the code is folded by default.
 
-The following code defines a plotting function to compare Bayesian and maximum likelihood point estimates side-by-side, while allowing us to  control for and examine the impact of an additional variable on performance (namely, the other parameter in the model, and the amount of data).
+# Point estimation performance
 
 ```{r}
 point_est_labeler <- as_labeller(c(
@@ -126,9 +120,8 @@ plot_point_ests_covar <- function(param, covar) {
 ## $R$
 
 First, let us examine estimation of $R$ aggregated across all simulated values of $k$ and all dataset sizes
-We can see that the two approaches have some similar behaviors, in that they both tend to underestimate $R$ when the true $R \approx 1$ and neither does well when the true $R = 2$
-But we can also see that they behave differently across the space of true $R$ values.
-It would seem that for small true $R$, maximum likelihood yields better estimates, but for $R \gtrsim 0.75$ the posterior median is a better estimator, or at least not a worse one.
+We can see that the two approaches have some similar behaviors, in that they both tend to underestimate $R$ when the true $R \approx 1$ and neither does amazingly well when the true $R = 2$.
+In general, it would seem that the posterior median is a better estimator than the maximum likelihood value, though at smaller values of $R$ maximum likelihood is slightly better on average (though with rather extreme variance when the sample size is very small, as we will see below).
 
 ```{r, message=FALSE, warning=FALSE}
 plot_point_ests("r")
@@ -184,9 +177,7 @@ plot_point_ests_covar("k", "r_true") + coord_cartesian(ylim = c(0, 10))
 
 # Coverage of 95% CIs
 
-The following code defines a plotting function to compare the coverage of Bayesian credible intervals with confidence intervals from maximum likelihood inference side-by-side, while allowing us to  control for and examine the impact of an additional variable on performance (namely, the other parameter in the model, and the amount of data).
-
-In the plots, the _points_ display the observed coverage.
+In the following plots, the _points_ display the observed coverage.
 That is, if the true value is covered in 50 out of 100 replicate analyses, the point shows this as 0.5.
 However, we are estimating coverage, and if we simulated 100 more datasets, we might see 47 covered, or 55.
 Thus, we also plot _error bars_ displaying a measure of this sampling-based uncertainty about the estimated coverage.
@@ -196,8 +187,11 @@ Note that "good" performance can be counterintuitive here.
 The simulations record the 95% CIs for both approaches, which means that the ideal coverage is 95%.[^1]
 That is, a "good" 95% CI will be wrong 5% of the time.
 (Otherwise it isn't a 95% CI, it's something else.)
-All things being equal, we'd rather it covered a bit too much rather than not quite enough.
+All things being equal, though, we'd generally rather it covered a bit too much rather than not quite enough.
 That is, 96% coverage would be preferable to 94%, but 94% is still better than 100%.
+
+As discussed in the "Details" vignette, the confidence intervals provided with maximum likelihood estimates use a hybrid approach, determining on a per-analysis basis whether to use parametric bootstrapping or likelihod profiling.
+Coverage of confidence intervals varies strongly by the method used, and these results apply only to this strategy.
 
 [^1]: That is, assuming we want good frequentist properties from our Bayesian credible intervals. For the purposes of this comparison, we do. We leave philisophical matters aside as out of scope.
 ```{r}
@@ -323,15 +317,14 @@ plot_coverage_covar <- function(param, covar, ci_alpha = 0.05) {
 
 ## $R$
 
-Coverage of $R$ by Bayesian credible intervals is generally good except for smaller $R$, where it is abysmal.
-Confidence intervals are also generally close to the nominal coverage, though the nominal coverage is low for from $R \approx 1$ until $R \approx 2$.
+Coverage of $R$ by both credible and confidence intervals is generally good, and rarely dips below 90% on average (averaged across the simulation grid).
 
 ```{r, message=FALSE, warning=FALSE}
 plot_coverage("r")
 ```
 
 For both approaches, more data is helpful, though it has a much bigger effect on confidence intervals.
-The coverage dip above 1 disappears by the time there are at least 40 observations in the dataset.
+The dip in confidence interval coverage above 1 disappears by the time there are at least 40 observations in the dataset.
 Credible intervals show less sensitivity to the (true) value of $k$ than confidence intervals
 
 ```{r, message=FALSE, warning=FALSE}
@@ -343,10 +336,10 @@ plot_coverage_covar("r", "k_true")
 ```
 
 ## $k$
-Coverage of $k$ is much better for confidence intervals than credible intervals.
+Coverage of $k$ is also generally quite good gor confidence and credible intervals.
 
 ```{r, message=FALSE, warning=FALSE}
-plot_coverage("k")
+plot_coverage("k") + coord_cartesian(ylim = c(0.7, 1))
 ```
 
 Coverage of credible intervals for $R \gtrapprox 0.5$, however, is quite good.
@@ -369,10 +362,11 @@ plot_coverage_covar("k", "r_true")
 Coverage is not the only thing we care about with our CIs.
 We also care about how narrow or wide the intervals are: all else equal, we'd prefer a narrower interval.
 
-Here, all else is not always equal (coverage is sometimes meaningfully different), but credible intervals are often much, much narrower than confidence intervals.
+Here, all else is not always equal exactly equal, though coverage is often qualitatively similar.
+However, credible intervals are often much, much narrower than confidence intervals.
 For $R$, the width of credible intervals is often 50\% or less of the width of confidence intervals.
 For $k$, the width of credible intervals can be less than 1\% of the width of confidence intervals.
-This is not an absolute for either $R$ or $k$; sometimes credible intervals are wider, though they are never nearly as much wider than confidence intervals than vice-versa.
+This is not an absolute for either $R$ or $k$; sometimes credible intervals are wider, though credible are basically never as much wider than confidence intervals as confidence intervals are than credible intervals.
 
 Below are plots showing the ratio of the widths of credible to confidence intervals for $R$ and $k$, grouped by the true (simulating) values.
 The horizontal line is at 1, highlighting the divide between credible intervals being smaller (ratio below 1) and larger (ratio above 1) than confidence intervals.
