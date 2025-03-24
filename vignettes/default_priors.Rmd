@@ -21,11 +21,6 @@ knitr::opts_chunk$set(
 A Gamma prior is placed on $R$, and a HalfNormal on $1 / \sqrt{k}$.
 The user may specify hyperparameters of the Gamma distribution (its shape and rate) and the HalfNormal (its scale parameter).
 Samples from the default prior are available in the package data object `prior_predictive`, which we will use to visualize the priors.
-If one wishes to draw more samples, or explore alternative hyperparameters, modify the following code used to produce the pre-packaged data.
-
-
-```{r, eval=FALSE, file="../data-raw/prior.R"}
-```
 
 ## Default prior on $R$
 
