@@ -101,7 +101,7 @@ fit_cen <- fit_nbbp_homogenous_bayes(
   condition_geq = rep(2, length(pneumonic_plague)),
   censor_geq = censoring_sizes,
   seed = 42,
-  iter = 500,
+  iter = 600,
 )
 ```
 
@@ -127,7 +127,7 @@ We again see considerable uncertainty about $k$.
 ### Comparison
 Obviously, the two analyses disagree on whether $R$ can be below 1.
 When we take the chain of 5009 to be non-extinct, this probability is 0, while when we take that chain to be censored, it is `r round(mean(unlist(rstan::extract(fit_cen, "r_eff")) < 1), 2) * 100`%.
-Otherwise, though, estimates of $R$ are qualitatively similar.
+Otherwise, though, estimates of $R$ are qualitatively relatively similar.
 
 ```{r}
 r_df <- data.frame(
@@ -137,7 +137,7 @@ r_df <- data.frame(
   ),
   large_chain = c(
     rep("non-extinct", 10000),
-    rep("censored", 1000)
+    rep("censored", 1200)
   )
 )
 
@@ -194,7 +194,7 @@ k_df <- data.frame(
   ),
   large_chain = c(
     rep("non-extinct", 10000),
-    rep("censored", 1000)
+    rep("censored", 1200)
   )
 )
 
