@@ -10,3 +10,7 @@ library(testthat)
 library(nbbp)
 
 test_check("nbbp")
+
+if (file.exists("src")) {
+  unlink("src", recursive = TRUE)
+}
