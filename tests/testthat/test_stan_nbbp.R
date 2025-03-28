@@ -33,8 +33,8 @@ test_that("stan uncensored log-likelihood agrees with nbbp", {
     condition_geq = rep(NA, length(chain_sizes_small)),
     prior = FALSE,
     likelihood = TRUE,
-    mu_r_eff = 0.0,
-    sigma_r_eff = 0.421404,
+    shape_r_eff = 2.183089,
+    rate_r_eff = 2.183089,
     sigma_inv_sqrt_dispersion = 1.482602
   )
 
@@ -44,8 +44,8 @@ test_that("stan uncensored log-likelihood agrees with nbbp", {
     condition_geq = rep(NA, length(chain_sizes_big)),
     prior = FALSE,
     likelihood = TRUE,
-    mu_r_eff = 0.0,
-    sigma_r_eff = 0.421404,
+    shape_r_eff = 2.183089,
+    rate_r_eff = 2.183089,
     sigma_inv_sqrt_dispersion = 1.482602
   )
 
@@ -104,8 +104,8 @@ test_that("stan censored and size-conditioned log-likelihood agrees with nbbp", 
     condition_geq = min_obs_sizes,
     prior = FALSE,
     likelihood = TRUE,
-    mu_r_eff = 0.0,
-    sigma_r_eff = 0.421404,
+    shape_r_eff = 2.183089,
+    rate_r_eff = 2.183089,
     sigma_inv_sqrt_dispersion = 1.482602
   )
 
