@@ -26,7 +26,7 @@ Samples from the default prior are available in the package data object `prior_p
 
 The parameter $R$ is the average number of infections caused by one infected individual (that is, it is the reproduction number).
 
-The default prior on $R$ is Gamma(shape = 2.183089, rate = 2.183089).
+The default prior on $R$ is Gamma(shape = `r nbbp::default_res`, rate = `r nbbp::default_res`).
 This has a mean of 1 and stipulates that $R$ is most likely between 1/2 and 2 (with 66.67% of prior mass in this region).
 The choice of mean 1 serves to provide some prior regularization (pull) towards 1.
 In regimes where $R$ is small, this should make estimation somewhat conservative, erring on the side of larger $R$.

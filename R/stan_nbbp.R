@@ -46,9 +46,9 @@ fit_nbbp_homogenous_bayes <- function(
     all_outbreaks,
     censor_geq = rep(NA, length(all_outbreaks)),
     condition_geq = rep(NA, length(all_outbreaks)),
-    shape_r_eff = 2.183089,
-    rate_r_eff = 2.183089,
-    sigma_inv_sqrt_dispersion = 1.482602,
+    shape_r_eff = nbbp::default_res,
+    rate_r_eff = nbbp::default_res,
+    sigma_inv_sqrt_dispersion = nbbp::default_sisd,
     iter = 5000,
     control = list(adapt_delta = 0.9),
     ...) {
