@@ -88,6 +88,7 @@ prior_predictive |>
   ggplot(aes(x = offspring_count, y = after_stat(density))) +
   geom_histogram(binwidth = 1) +
   theme_minimal() +
+  coord_cartesian(xlim = c(0, 15)) +
   xlab("# offspring")
 ```
 
@@ -103,6 +104,7 @@ prior_predictive |>
   ggplot(aes(x = chain_size, y = after_stat(density))) +
   geom_histogram(binwidth = 1) +
   theme_minimal() +
+  coord_cartesian(xlim = c(0, 30)) +
   xlab("chain size")
 ```
 
