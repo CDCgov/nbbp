@@ -51,23 +51,25 @@ Some applications of the negative binomial branching process model have conditio
 In this way, it can be guaranteed that all chain sizes are finite, even when infinite chains are possible.
 However, [Waxman and Nouvellet (2019)](https://doi.org/10.1016/j.jtbi.2019.01.033) show that when conditioning there are two indistinguishable modes, one with $R > 1$ and one with $R < 1$.
 For this reason, we treat non-extinct chains separately in both `stan` code for inference and `R` code for simulation.
-In inference, a non-finite chain provides evidence that $R > 1$, so the presence or absence of such chains is itself informative (see the vignette "Advanced data" for an application).
+In inference, a non-finite chain provides guarantees that $R > 1$, this is the necessary condition for a negative binomial branching process to never go extinct.
+Therefore, the presence or absence of such chains is itself informative (see the vignette "Advanced data" for an application).
 In simulation, this means that when $R > 1$, some samples may be `Inf`, indicating a non-extinct chain.
 
 Mathematically, we partition the model outcomes into finite and infinite chains.
 That is, a chain either goes extinct (has finite size) or doesn't, and this happens according to the extinction probability $\text{Pr}(\mathcal{E} \mid R, k)$.
-We can write the likelihood for one chain as
+Formally, the possible chain sizes are $c \in \{0, 1, \dots\} \cup \infty$.
+We can write the likelihood for one chain size $c$ as
 \begin{equation}
-\text{Pr}(c \mid R, k) = \mathbb{I}(\mathcal{E}) \left[ \text{Pr}(c \mid R, k, \mathcal{E}) \text{Pr}(\mathcal{E} \mid R, k) \right] + \mathbb{I}(\mathcal{E}^{\text{C}}) \left[ 1.0 - \text{Pr}(\mathcal{E} \mid R, k) \right]
+\text{Pr}(c \mid R, k) = \mathbb{I}(c \in \{0, 1, \dots\}) \left[ \text{Pr}(c \mid R, k, \mathcal{E}) \text{Pr}(\mathcal{E} \mid R, k) \right] + \mathbb{I}(c \in \{\infty\}) \left[ 1.0 - \text{Pr}(\mathcal{E} \mid R, k) \right]
 \end{equation}
-where $c$ is the chain size, $\mathbb{I}$ is the indicator function, and $\mathcal{E}$ ($\mathcal{E}^{\text{C}}$) is the event that the chain goes (does not go) extinct.
-Since,
+where the chain size which can take finite values $c = 0, 1, \dots$ as well as the value "$c = \infty$", $\mathbb{I}$ is the indicator function, and $\mathcal{E}$ ($\mathcal{E}^{\text{C}}$) is the event that the chain goes (does not go) extinct.
+For conditionally finite chains, we can write
 \begin{equation}
-\text{Pr}(c \mid R, k, \mathcal{E}) = \text{Pr}(c \mid R, k) / \text{Pr}(\mathcal{E} \mid R, k)
+\text{Pr}(c \mid R, k, \mathcal{E}) = {\text{Pr}(c, \mathcal{E} \mid R, k) \over \text{Pr}(\mathcal{E} \mid R, k)}  = {\text{Pr}(c \mid R, k) \over \text{Pr}(\mathcal{E} \mid R, k)}.
 \end{equation}
-this reduces to
+Using this expression reduces the likelihood of chain size $c$ to
 \begin{equation}
-\text{Pr}(c \mid R, k) = \mathbb{I}(\mathcal{E}) \left[\text{Pr}(c \mid R, k) \right] + \mathbb{I}(\mathcal{E}^{\text{C}}) \left[ 1.0 - \text{Pr}(\mathcal{E} \mid R, k) \right]
+\text{Pr}(c \mid R, k) = \mathbb{I}(c \in \{0, 1, \dots\} ) \left[\text{Pr}(c \mid R, k) \right] + \mathbb{I}(c \in \{\infty\}) \left[ 1.0 - \text{Pr}(\mathcal{E} \mid R, k) \right].
 \end{equation}
 
 # Numerical approximations
