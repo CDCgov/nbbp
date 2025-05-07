@@ -8,9 +8,9 @@ fit_nbbp_homogenous_bayes(
   all_outbreaks,
   censor_geq = rep(NA, length(all_outbreaks)),
   condition_geq = rep(NA, length(all_outbreaks)),
-  mu_r_eff = 0,
-  sigma_r_eff = 0.421404,
-  sigma_inv_sqrt_dispersion = 1.482602,
+  shape_r_eff = nbbp::default_res,
+  rate_r_eff = nbbp::default_res,
+  sigma_inv_sqrt_dispersion = nbbp::default_sisd,
   iter = 5000,
   control = list(adapt_delta = 0.9),
   ...
@@ -24,9 +24,9 @@ fit_nbbp_homogenous_bayes(
 \item{condition_geq}{optional, possibly per-chain, conditioning on minimum observed chain size,
 see details.}
 
-\item{mu_r_eff}{location parameter of Lognormal prior on r_eff (prior mean(log(r_eff))).}
+\item{shape_r_eff}{shape parameter of Gamma prior on r_eff.}
 
-\item{sigma_r_eff}{scale parameter of Lognormal prior on r_eff (prior sd(log(r_eff))).}
+\item{rate_r_eff}{rate parameter of Gamma prior on r_eff.}
 
 \item{sigma_inv_sqrt_dispersion}{scale of HalfNormal prior on 1 / sqrt(dispersion).}
 
@@ -69,15 +69,7 @@ Conditioning and/or right-censoring reveal that there are small numerical instab
 PMF which can make it sum to values ever so slightly larger than 1. This is handled by
 rescaling the CDF such that it does not exceed 1 in the range it needs to be evaluated.
 
-We let r_eff ~ LogNormal(mu = mu_r_eff, sigma = sigma_r_eff)
-(parameterized in terms of log-mean and log-sd as in stan and R),
-with the default being Lognormal(mu = 0.0, sigma = 0.421404).
-The default has a median R of 1, and a 90\% prior CI of spanning from 1/2 to 2.
-
-We let 1/sqrt(dispersion) ~ HalfNormal(sigma = sigma_inv_sqrt_dispersion),
-with the default being HalfNormal(sigma = 1.482602).
-The default puts 50\% of the prior mass in the highly-overdispersed
-region (dispersion parameter < 1, more dispersed than a Geometric distribution) and 50\%
-in the less overdispersed region (dispersion parameter > 1, less dispersed than a Geometric
-distribution, with the Poisson limit at infinity).
+We let r_eff ~ Gamma(shape = shape_r_eff, rate = rate_r_eff), and
+1/sqrt(dispersion) ~ HalfNormal(sigma = sigma_inv_sqrt_dispersion).
+For more on the priors and their default values see \code{vignette("default_priors")}.
 }
