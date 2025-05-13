@@ -12,9 +12,6 @@ on:
 
 name: pkgdown website
 
-env:
-  PKG_PATH: epimodel-mpox
-
 jobs:
   build:
     name: pkgdown site build
