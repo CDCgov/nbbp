@@ -63,7 +63,8 @@ This suggests:
 - Genomic NBBP
   - [Estimating Re and overdispersion in secondary cases from the size of identical sequence clusters of SARS-CoV-2](https://www.medrxiv.org/content/10.1101/2024.05.26.24307940v1.full.pdf)
   - [Estimating the reproduction number and transmission heterogeneity from the size distribution of clusters of identical pathogen sequences](https://www.pnas.org/doi/pdf/10.1073/pnas.2305299121)
-- [Inference of R0 and Transmission Heterogeneity from the Size Distribution of Stuttering Chains](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002993)
+- [Blumberg S, Lloyd-Smith JO. Inference of $R_0$ and transmission heterogeneity from the size distribution of stuttering chains. PLoS computational biology. 2013 May 2;9(5):e1002993.
+](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002993)
 - [Estimating the transmission potential of supercritical processes based on the final size distribution of minor outbreaks](https://pmc.ncbi.nlm.nih.gov/articles/PMC3249525/)
 - [Waxman and Nouvellet (2019)](https://doi.org/10.1016/j.jtbi.2019.01.033)
 - Package data
@@ -75,21 +76,40 @@ This suggests:
 
 ## `nbbp` details
 
-### How can we use extinction as information?
+### Using outbreak size and extinction as information in branching process inference
 
 A branching process is expected to be a good model of epidemic dynamics when outbreaks are new and small. In branching process theory for nearly all models, two limiting outcomes are possible: stochastic fade-out, with an eventual finite number of cases, or super-critical growth implying a large outbreak, with an infinite number of cases in the branching process paradigm.
 
-In reality, a sufficiently large outbreak implies that $R > 1$ at least in the initial outbreak stage. Whether large outbreaks are input into `nbbp` as either `Inf` (super-critical and without extinction) or a censored observation (which may be super-critical), is a user judgement.
+In reality, no outbreak of a pathogen is truly infinite, and assuming all cases are determined, we can use the size distribution of observed outbreaks to make inference on the underlying secondary case distribution (Blumberg and Lloyd-Smith, 2013). The outbreak size distribution given by (Blumberg and Lloyd-Smith, 2013) applies for both $R<=1$ and $R>1$, therefore, the absence of large outbreaks does not limit `nbbp` to inferring $R <= 1$ since an alternative explanation is that each detected outbreak had super-critical potential but nonetheless stochastically faded-out.
 
-However, the absence of large outbreaks is not a guarantee that $R <= 1$ since an alternative explanation is that each detected outbreak had super-critical potential but was subject to stochastic fade-out. 
+However, observing at least one very large outbreak strongly suggests $R > 1$ with probability near 1, at least in the initial outbreak stage, but later in the outbreak, $R$ may fluctuate due to various factors such as interventions or population behavior changes. Naively attributing a large, but finite and extinct, observed outbreak size to a constant $R$ can be misleading in a branching process model since such outbreaks can only occur if $R\approx 1$. A large, but extinct, outbreak is vanishingly unlikely if $R\ll 1$, since outbreaks are typically small in this regime, and also vanishingly unlikely if $R\gg 1$, since outbreaks will not go extinct at large size.
+
+In `nbbp` we advance on (Blumberg and Lloyd-Smith, 2013) in two ways:
+
+1. We permit the explicit possibility of non-extinction by allowing the user to flag particular outbreaks as "super-critical" even if the observed size is large but finite. This allows us to use non-extinction as infomation in the model.
+2. Ongoing outbreaks can be user flagged as "censored", which allows the model to assign their likelihood based on the probability of exceeding the observed size, rather than the probability of being exactly equal to the observed size.
 
 ### Data likelihood
 
-Our approach is based on 
+The underlying probabilistic model of `nbbp` can generate a tripartite data set,
 
 ```math
-\text{Pr}(c \mid R, k) = \mathbb{I}(\mathcal{E}) \left[ \text{Pr}(c \mid R, k, \mathcal{E}) \text{Pr}(\mathcal{E} \mid R, k) \right] + \mathbb{I}(\mathcal{E}^{\text{C}}) \left[ 1.0 - \text{Pr}(\mathcal{E} \mid R, k) \right]
+\mathcal{D} = \left(\{c_j\}_{j=1,\dots,N_c}, \{C_j\}_{j=1,\dots,N_C}, N_\infty\right).
 ```
+
+Where there are $N_c$ observed complete outbreaks with sizes $c_j$ for $j=1,\dots,N_c$, $N_C$ observed ongoing outbreaks with eventual sizes _at least_ $C_j$ for $j=1,\dots,N_C$ and $N_\infty$ outbreaks treated as having gone super-critical.
+
+The loglikelihood for a given data set $\mathcal{D}$ is,
+
+```math
+\begin{aligned}
+\ell(\mathcal{D}) &= \sum_{j=1}^{N_c} \log\left[\text{Pr}(c_j \mid R, k)\right] + \sum_{j=1}^{N_C} \log\left[\text{Pr}(c_j \geq C_j \mid R, k)\right] + N_\infty \log\left[1 - \text{Pr}(\mathcal{E} \mid R, k)\right], \\
+\text{Pr}(c_j \geq C_j \mid R, k) & = 1 - \text{Pr}(c_j < C_j \mid R, k) \\
+ &= 1 - \sum_{c=0}^{C_j - 1} \text{Pr}(c \mid R, k).
+\end{aligned}
+```
+Where $\text{Pr}(c_j \mid R, k)$ is the probability of observing a complete outbreak of size $c_j$ given the parameters $R$ and $k$ from (Blumberg and Lloyd-Smith, 2013), and $\text{Pr}(\mathcal{E} \mid R, k)$ is the probability of extinction given the same parameters. Note that, effectively, we shift large outbreaks to "$c_j = \infty$" but solve for this probability using traditional branching process methods rather than $\text{Pr}(c_j \mid R, k)$.
+
 
 ### Censoring
 
