@@ -54,6 +54,8 @@ This suggests:
 - [`Epichains`](https://github.com/epiverse-trace/epichains)
   - A broad and powerful toolkit for a variety of branching process models, including those without analytical solutions
   - A utility that provides likelihoods but leaves inference to the user
+- [`estRodis`](https://github.com/mwohlfender/estRodis)
+  - A toolkit targeted at NBBP models for genomic data
   - Targeted strongly at the genomic regime, which is a $\geq 3$ parameter model including a mutation rate (and usually a sampling fraction, because sequencing is almost never complete)
   - Includes a model which can be used for pure R/k inference when setting the mutation rate parameter to 0. In the regime of overlap:
     - estRodis provides incomplete sampling, nbbp does not
