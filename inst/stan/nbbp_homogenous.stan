@@ -9,10 +9,10 @@ functions {
 
   // Use Newton's method in-stan to solve Equation 4 in https://doi.org/10.1016/j.jtbi.2011.10.039
   real solve_exn(real r_eff, real dispersion, int nsteps) {
-    if (r_eff < 1.0) {
+    if (r_eff <= 1.0) {
       return 1.0;
     }
-    real p = 0.5;
+    real p = 1 / r_eff; // Initial guess -- exact for Geometric offspring distribution
     for (i in 1:nsteps) {
       p = p - exn_prob_zero_fun(p, r_eff, dispersion) /
         exn_prob_zero_fun_grad(p, r_eff, dispersion);
