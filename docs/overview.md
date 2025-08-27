@@ -56,6 +56,44 @@ This suggests:
   - A utility that provides likelihoods but leaves inference to the user
 - [`estRodis`](https://github.com/mwohlfender/estRodis)
   - A toolkit targeted at NBBP models for genomic data
+In brief: an extensible inference-focused package for estimating the effective reproduction number $R$ and concentration parameter $k$ from final outbreak size data which is well-behaved for small sample sizes.
+
+### The small sample size regime
+- Means
+  - Asymptotic guarantees aren't helpful
+    - Point estimation unbiasedness isn't particularly useful if estimator variance is overly large
+    - Confidence intervals are typically done via likelihood profiling but LRT-based-cutoffs are based on results for asymptotically large sample sizes
+  - Observations of all singleton chains are possible (see: Borealpox), this is a pathological likelihood surface
+  - "Is $R < 1$ or not?" can be an important question to answer from this data
+- Suggests
+  - Bayesian approaches (priors can ameliorate both of the above to some extent)
+  - Inference should not condition on extinction (a chain that does not go extinct "on its own" is evidence)
+
+### Built around stan
+- Capitalizes on a mature Bayesian statistical inference platform with
+  a strong development community
+- Leverages interoperability with R (specifically using Rstan and leveraging rstantools)
+- Preserves relative ease downstream of adding more complex models
+  - The design choices previously highlighted required fine-tuning, all of which is in modularized stan code
+  - Adding a time-series model, or a geospatial model, can leverage all that work, leaving only choices on new structural components
+
+### Package offers
+- Extensive documentation
+  - Including on how well inference works
+- Interfaces to stan for:
+  - Bayesian inference
+  - Maximum likelihood inference
+  - Likelihood surface visualization
+- Priors tested in simulation
+- R code for the final size distribution in typical R style (d,n,r, no q) for ease of handling inference-adjacent tasks
+
+## Other things in this, and related, spaces
+
+### Software
+- Epichains
+  - A broad and powerful toolkit for a variety of branching process models, including those without analytical solutions
+  - A utility that provides likelihoods but leaves inference to the user
+- [mwohlfender/estRodis](https://github.com/mwohlfender/estRodis), a package for genomic NBBP models
   - Targeted strongly at the genomic regime, which is a $\geq 3$ parameter model including a mutation rate (and usually a sampling fraction, because sequencing is almost never complete)
   - Includes a model which can be used for pure R/k inference when setting the mutation rate parameter to 0. In the regime of overlap:
     - estRodis provides incomplete sampling, nbbp does not
@@ -67,6 +105,7 @@ This suggests:
   - [Estimating the reproduction number and transmission heterogeneity from the size distribution of clusters of identical pathogen sequences](https://www.pnas.org/doi/pdf/10.1073/pnas.2305299121)
 - [Blumberg S, Lloyd-Smith JO. Inference of $R_0$ and transmission heterogeneity from the size distribution of stuttering chains. PLoS computational biology. 2013 May 2;9(5):e1002993.
 ](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002993)
+- [Inference of R0 and Transmission Heterogeneity from the Size Distribution of Stuttering Chains](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002993)
 - [Estimating the transmission potential of supercritical processes based on the final size distribution of minor outbreaks](https://pmc.ncbi.nlm.nih.gov/articles/PMC3249525/)
 - [Waxman and Nouvellet (2019)](https://doi.org/10.1016/j.jtbi.2019.01.033)
 - Package data
@@ -116,6 +155,23 @@ Where $\text{Pr}(c_j \mid R, k)$ is the probability of observing a complete outb
 ### Censoring
 
 
+- ...
+
+## Design choices and gotchas
+
+### How can we use extinction as information?
+- The final size of a branching process is infinite when the process does not go extinct.
+  - The presence of these observations is immediate evidence for $R > 1$
+  - Their absence suggests $R < 1$, but how do we incorporate this information in a principled way?
+- In situations where they are ever reasonable approximations to reality, branching process are expected to be better approximate reality when outbreaks are new and small
+- In reality, an outbreak with R \> 1 can lead to endemic transmission, where there is no final size, or factors outside model scope, such as the depletion of susceptibles, can lead the final size to be finite but large.
+
+- In essence, we have to be able to tell the model that if an outbreak had occurred in branching process land, it would have been infinite, because it was limited by model-exogenous factors.
+  - User judgment on what constitutes such a chain is needed, such that it can be input into nbbp as either Inf (non-extinct) or a censored observation (which may be non-exctinct, the likelihood will weight this)
+  - For math, see [below](#non-extinction)
+- Corollaries: need some extinction book-keeping, need censoring
+
+### Censoring
 - Exposed numerical instabilities in the CDF
   - Different PDF forms displayed different levels of sensitivity, the one which appeared most robust was to re-write it using stan's built in negative binomial log-density function `neg_binomial_2_lpmf`.
   - Denote by $\mathrm{NegativeBinomial}(x; \mu, \phi)$ the negative binomial probability mass function evaluated at $x$ with mean $\mu$ and concentration $\phi$ (the same mean, concentration parameterization as we use for the NBBP itself)
