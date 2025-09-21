@@ -63,7 +63,13 @@ fit_nbbp_homogenous_bayes <- function(
     likelihood = TRUE
   )
 
-  return(rstan::sampling(stanmodels$nbbp_homogenous, sdat, iter = iter, control = control, ...))
+  return(rstan::sampling(
+    stanmodels$nbbp_homogenous,
+    sdat,
+    iter = iter,
+    control = control,
+    ...
+  ))
 }
 
 
@@ -133,8 +139,9 @@ fit_nbbp_homogenous_ml <- function(
     ci_method = "hybrid",
     seed = NA,
     ...) {
+  known <- ci_method %in% c("hybrid", "boot", "profile")
   stopifnot(
-    "Unrecognized `ci_method`." = (ci_method %in% c("hybrid", "boot", "profile"))
+    "Unrecognized `ci_method`." = known
   )
 
   fit <- .fit_nbbp_homogenous_ml(
@@ -225,7 +232,12 @@ fit_nbbp_homogenous_ml <- function(
     } else {
       seed <- seed + 1
     }
-    fits[[i]] <- rstan::optimizing(stanmodels$nbbp_homogenous, sdat, seed = seed, ...)
+    fits[[i]] <- rstan::optimizing(
+      stanmodels$nbbp_homogenous,
+      sdat,
+      seed = seed,
+      ...
+    )
     if (fits[[i]]$return_code == 0) {
       successful[i] <- TRUE
     }
@@ -241,7 +253,9 @@ fit_nbbp_homogenous_ml <- function(
   }
   pars <- sapply(fits[successful], function(fit) {
     return(c(
-      log_likelihood = fit$value, fit$par["r_eff"], fit$par["dispersion"]
+      log_likelihood = fit$value,
+      fit$par["r_eff"],
+      fit$par["dispersion"]
     ))
   })
   fit <- fits[[which.max(pars["log_likelihood", ])]]
@@ -355,10 +369,18 @@ fit_nbbp_homogenous_ml <- function(
   n_obs <- length(all_outbreaks)
   all_boot_sizes <- NA
   if (is.na(seed)) {
-    all_boot_sizes <- nbbp::rnbbp(n_obs * nboot, fit$par["r_eff"], fit$par["dispersion"])
+    all_boot_sizes <- nbbp::rnbbp(
+      n_obs * nboot,
+      fit$par["r_eff"],
+      fit$par["dispersion"]
+    )
   } else {
     withr::with_seed(seed, {
-      all_boot_sizes <- nbbp::rnbbp(n_obs * nboot, fit$par["r_eff"], fit$par["dispersion"])
+      all_boot_sizes <- nbbp::rnbbp(
+        n_obs * nboot,
+        fit$par["r_eff"],
+        fit$par["dispersion"]
+      )
     })
   }
 
@@ -385,7 +407,6 @@ fit_nbbp_homogenous_ml <- function(
   r <- unname(fit$par["r_eff"])
   k <- unname(fit$par["dispersion"])
 
-
   m <- matrix(
     unname(
       c(
@@ -395,7 +416,8 @@ fit_nbbp_homogenous_ml <- function(
         k - unname(stats::quantile(k - boot["dispersion", ], q_low))
       ),
     ),
-    2, 2,
+    2,
+    2,
     byrow = TRUE
   )
 
@@ -423,25 +445,31 @@ fit_nbbp_homogenous_ml <- function(
     rate_r_eff,
     sigma_inv_sqrt_dispersion) {
   stopifnot(
-    "Length of `censor_geq` does not match length of `all_outbreaks`" =
-      length(censor_geq) == length(all_outbreaks)
+    "Length of `censor_geq` does not match length of `all_outbreaks`" = length(
+      censor_geq
+    ) ==
+      length(all_outbreaks)
   )
 
   stopifnot(
-    "Length of `condition_geq` does not match length of `all_outbreaks`" =
-      length(condition_geq) == length(all_outbreaks)
+    "Length of `condition_geq` does not match length of `all_outbreaks`" = length(
+      condition_geq
+    ) ==
+      length(all_outbreaks)
   )
 
   uncensored <- all_outbreaks[is.na(censor_geq)]
   censored <- censor_geq[!is.na(censor_geq)] - 1
   stopifnot(
-    "`censor_geq[i] = 1` implies no censoring and should be indicated with NA" =
-      all(censored > 0)
+    "`censor_geq[i] = 1` implies no censoring and should be indicated with NA" = all(
+      censored > 0
+    )
   )
   size_conditioned <- condition_geq[!is.na(condition_geq)] - 1
   stopifnot(
-    "`size_conditioned[i] = 1` implies no conditioning and should be indicated with NA" =
-      all(censored > 0)
+    "`size_conditioned[i] = 1` implies no conditioning and should be indicated with NA" = all(
+      censored > 0
+    )
   )
 
   n_supercrit <- sum(is.infinite(uncensored))
@@ -554,7 +582,11 @@ compute_likelihood_surface <- function(
   )
   r <- k <- NULL # to make R CMD check happy
   suppressMessages({
-    fake_fit <- rstan::sampling(stanmodels$nbbp_homogenous, fake_sdat, chains = 0)
+    fake_fit <- rstan::sampling(
+      stanmodels$nbbp_homogenous,
+      fake_sdat,
+      chains = 0
+    )
   })
   bound_r <- any(is.infinite(all_outbreaks[is.na(censor_geq)]))
 
@@ -562,16 +594,70 @@ compute_likelihood_surface <- function(
     r = r_grid,
     k = k_grid
   ) |>
-    dplyr::mutate(log_dens = purrr::pmap_dbl(
-      list(r, k),
-      function(r, k) {
-        rstan::log_prob(
-          fake_fit,
-          upars = .convert_stan_par(c(r, k), bound_r, to_stan = TRUE),
-          adjust_transform = FALSE
-        )
-      }
-    ))
+    dplyr::mutate(
+      log_dens = purrr::pmap_dbl(
+        list(r, k),
+        function(r, k) {
+          rstan::log_prob(
+            fake_fit,
+            upars = .convert_stan_par(c(r, k), bound_r, to_stan = TRUE),
+            adjust_transform = FALSE
+          )
+        }
+      )
+    )
 
   return(df)
+}
+
+#' Fit a negative binomial branching process model where all offspring counts are known
+#'
+#' @details
+#' When the number of offspring produced by every infection is known, the likelihood is
+#' simply a product of NegativeBinomial(offspring # | R, k) likelihoods. This function
+#' encapsulates a simple stan model which uses the same priors and produces output in
+#' the same form as \link[fit_nbbp_homogenous_bayes]{fit_nbbp_homogenous_bayes}.
+#'
+#' @param all_outbreaks_all_offspring list (one item per chain) of vectors, each giving the
+#' number of offspring of all individuals in the chain. This must include 0 offspring counts!
+#' @param shape_r_eff shape parameter of Gamma prior on r_eff.
+#' @param rate_r_eff rate parameter of Gamma prior on r_eff.
+#' @param sigma_inv_sqrt_dispersion scale of HalfNormal prior on 1 / sqrt(dispersion).
+#' @param iter number of iterations for rstan::sampling, default of 5000 intends to be conservative.
+#' @param control list for rstan::sampling, default attempts to set adapt_delta conservatively.
+#' @param ... further values past to rstan::sampling.
+#'
+#' @return an rstan stan_fit object
+#' @export
+fit_nbbp_all_offspring <- function(
+    all_outbreaks_all_offspring,
+    shape_r_eff = nbbp::default_res,
+    rate_r_eff = nbbp::default_res,
+    sigma_inv_sqrt_dispersion = nbbp::default_sisd,
+    iter = 5000,
+    control = list(adapt_delta = 0.9),
+    ...) {
+  pmf_tab <- table(unlist(all_outbreaks_all_offspring))
+
+  pmf_exps <- array(pmf_tab)
+  pmf_idx <- array(as.integer(names(pmf_tab)))
+
+  sdat <- list(
+    use_prior = 1,
+    use_likelihood = 1,
+    dim_pmf = length(pmf_idx),
+    pmf_points = pmf_idx,
+    pmf_exps = pmf_exps,
+    shape_r_eff = shape_r_eff,
+    rate_r_eff = rate_r_eff,
+    sigma_inv_sqrt_dispersion = sigma_inv_sqrt_dispersion
+  )
+
+  return(rstan::sampling(
+    stanmodels$complete_offspring,
+    sdat,
+    iter = iter,
+    control = control,
+    ...
+  ))
 }

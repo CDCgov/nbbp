@@ -65,11 +65,7 @@ pnbbp <- function(q, r, k) {
 
 #' @rdname dnbbp
 #' @export
-rnbbp <- function(n,
-                  r,
-                  k,
-                  condition_on_extinction = FALSE,
-                  max_size = 1e6) {
+rnbbp <- function(n, r, k, condition_on_extinction = FALSE, max_size = 1e6) {
   n_subcrit <- n
   if (!condition_on_extinction && r >= 1.0) {
     exn_prob <- nbbp_ep(r, k)$prob
@@ -157,4 +153,46 @@ nb_param_convert <- function(size = NULL, prob = NULL, mu = NULL) {
     stop("Must provide either size and prob or size and mu.")
   }
   return(res)
+}
+
+#' Simulate one chain where all offspring counts are known
+#'
+#' See simulate_all_offspring
+#'
+#' @keywords internal
+.simulate_all_offspring <- function(r, k, max_size) {
+  stack_size <- 1
+  chains <- list()
+  while (stack_size > 0) {
+    if (stack_size > max_size) {
+      return(NA)
+    }
+    n <- rnbinom(1, size = k, mu = r)
+    stack_size <- stack_size - 1 + n
+    chains <- c(chains, n)
+  }
+  chains
+}
+
+
+#' Simulate chains where all offspring counts are known
+#'
+#' @details
+#' In this model, every individual infects a Negative-Binomially-distributed
+#' number of additional individuals.
+
+#' @param n number of samples to draw
+#' @param r effective reproduction number
+#' @param k dispersion parameter: when <1, overdispersed
+#' @param max_size simulation will be terminated if more than this many individuals
+#' are infected in any one chain.
+#'
+#' @export
+simulate_all_offspring <- function(n, r, k, max_size = 1000) {
+  if (r >= 1.0) {
+    warn("Simulating chains for R >= 1 is not recommended.")
+  }
+  lapply(1:n, function(x) {
+    .simulate_all_offspring(r = r, k = k, max_size = max_size)
+  })
 }
