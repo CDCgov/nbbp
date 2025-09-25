@@ -51,7 +51,7 @@ dnbbp <- function(x, r, k, condition_on_extinction = FALSE) {
 .dnbbp_subcrit <- function(x, r, k, condition_on_extinction) {
   prob_exn <- ifelse(condition_on_extinction, nbbp_ep(r, k)$prob, 1.0)
   if (r >= 0) {
-    -log(x) + dnbinom(x - 1, mu = r * x, size = k * x) / prob_exn
+    dnbinom(x - 1, mu = r * x, size = k * x) / (x * prob_exn)
   } else {
     stop("R must be nonnegative")
   }
