@@ -50,25 +50,12 @@ dnbbp <- function(x, r, k, condition_on_extinction = FALSE) {
 #' @keywords internal
 .dnbbp_subcrit <- function(x, r, k, condition_on_extinction) {
   prob_exn <- ifelse(condition_on_extinction, nbbp_ep(r, k)$prob, 1.0)
-  if (r == 0) {
-    stats::dnbinom(x = x - 1, size = k, mu = r) / prob_exn
-  } else if (r > 0) {
-    exp(.dnbbp_log(x, r, k)) / prob_exn
+  if (r >= 0) {
+    stats::dnbinom(x - 1, mu = r * x, size = k * x) / (x * prob_exn)
   } else {
     stop("R must be nonnegative")
   }
 }
-
-#' Unconditional log-scale PMF of the NBBP for finite chain sizes
-#'
-#' See dnbbp
-#'
-#' @keywords internal
-.dnbbp_log <- function(x, r, k) {
-  lgamma(k * x + x - 1) - (lgamma(k * x) + lgamma(x + 1)) +
-    (x - 1) * log(r / k) - (k * x + x - 1) * log(1 + r / k)
-}
-
 
 #' @rdname dnbbp
 #' @export
