@@ -49,12 +49,9 @@ dnbbp <- function(x, r, k, condition_on_extinction = FALSE) {
 #'
 #' @keywords internal
 .dnbbp_subcrit <- function(x, r, k, condition_on_extinction) {
+  .assert_r_realpos(r)
   prob_exn <- ifelse(condition_on_extinction, nbbp_ep(r, k)$prob, 1.0)
-  if (r >= 0) {
-    stats::dnbinom(x - 1, mu = r * x, size = k * x) / (x * prob_exn)
-  } else {
-    stop("R must be nonnegative")
-  }
+  stats::dnbinom(x - 1, mu = r * x, size = k * x) / (x * prob_exn)
 }
 
 #' @rdname dnbbp
@@ -65,11 +62,8 @@ pnbbp <- function(q, r, k) {
 
 #' @rdname dnbbp
 #' @export
-rnbbp <- function(n,
-                  r,
-                  k,
-                  condition_on_extinction = FALSE,
-                  max_size = 1e6) {
+rnbbp <- function(n, r, k, condition_on_extinction = FALSE, max_size = 1e6) {
+  .assert_r_realpos(r)
   n_subcrit <- n
   if (!condition_on_extinction && r >= 1.0) {
     exn_prob <- nbbp_ep(r, k)$prob
@@ -114,7 +108,7 @@ rnbbp <- function(n,
 #'
 #' @export
 nbbp_ep <- function(r, k, tol = .Machine$double.eps) {
-  stopifnot(r > 0)
+  .assert_r_realpos(r)
   if (r < 1.0) {
     return(list(prob = 1.0, error = 0.0))
   }
