@@ -30,3 +30,10 @@ table_add_1d <- function(t1, t2, keep_zeros = FALSE) {
 
   return(res)
 }
+
+#' Unified error message everywhere we assert that R > 0
+#'
+#' @keywords internal
+.assert_r_realpos <- function(r) {
+  stopifnot("R is 0, but must be positive finite!" = r > 0)
+}
