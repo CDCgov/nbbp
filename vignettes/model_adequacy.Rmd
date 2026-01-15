@@ -10,10 +10,23 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+It is trite, but nonetheless true (and very important) to remember that all models are wrong.
+There are more things in heaven and earth than are dreamt of in any model's view of the world.
+Nonetheless, some models in some circumstances are useful.
+
+Model adequacy is a broad umbrella for interrogating how well our model captures features of reality.
+If our model fails to adequately recapitulate features of the data which are important to our question, then it is unlikely to be giving us useful answers to our questions
+For example, if our model cannot capture the average final chain size in our data, we should not trust its estimates of $R$.
+But if our model _can_ adequately capture important features of the data, we have reason to hope its inferences are useful (at least, with respect to those features).
+
 # The posterior predictive distribution
 The posterior predictive distribution is the distribution on some quantity that we might expect to see in new datasets, given our fitted model.
-One common workflow for using this is to simulate new datasets from the posterior predictive distribution, then summarize them to understand some quantity of interest.
+By comparing our model's predictive distribution to the observed value, we can assess whether it is adequate or not.
+For example, if we compare the predictive distribution for the average final chain size, and find it does not match the average of our samples, our model is inadequate and untrustworthy.
+
+A common workflow for using the posterior predictive to address adequacy is to simulate new datasets from the posterior predictive distribution, then summarize them to understand a specific quantity (or quantities) of interest.
 By looking at how it compares to our posterior, we can try to understand where our model may be missing reality.
+In so doing, we assess the model's adequacy.
 
 Censoring and conditioning present potential wrinkles.
 For simplicity, we will focus on models without censoring.
@@ -292,6 +305,7 @@ where $\mathbf{y}$ is our observed chain-size data ($s = ||\mathbf{y}||$).
 # Model testing with the posterior predictive
 The posterior predictive distribution can be used to test models in the frequentist fashion.
 That is, we can ask if our model is so far off the mark in explaining some feature of our data that we should reject it as inadequate.
+(Which is to say that inadequate models can be useful, under the right circumstances.)
 To examine this, let us return to the example of comparing $R$ for measles between the U.S. and Canada in the late 1990s.
 Previously, we saw that the posterior distributions had a small amount of overlap, but that this can be somewhat difficult to interpret.
 As an alternative, we can examine instead the evidence against a pooled model in which they have the same $R$.
@@ -309,7 +323,7 @@ pooled <- fit_nbbp_homogenous_bayes(measles_pooled, iter = 5000, seed = 42)
 Now we need some summary statistic whose distribution we can get from this analysis and which will tell us if $R$ is different between these two datasets.
 (By telling us if it's _not the same_, which works out to be the same thing here as there are only the two options.)
 The average chain size is directly linked to $R$, so we will focus on that.
-In fact, if we assume $R < 1$, per [Blumberg and Lloyd-Smith (2014)](https://doi.org/10.1371/journal.pcbi.1002993) we can estimate it with the method of moments as 1 - 1 / mean(size).
+In fact, if we assume $R < 1$, per [Blumberg and Lloyd-Smith (2014)](https://doi.org/10.1371/journal.pcbi.1002993) we can estimate it with the [method of moments](https://online.stat.psu.edu/stat415/lesson/1/1.4) as 1 - 1 / mean(size).
 Since we care about a difference in $R$, we will look at a(n absolute) difference in means.
 The question, then, is "a difference in means between what?"
 
