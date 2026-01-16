@@ -294,7 +294,7 @@ This is a function of $R$, $k$, and the minimum observed chain size (here 1, so 
 For a given $p_s$, we can think about the number of chains in our dataset as a sample from a Binomial($n$, $p$) distribution with unknown $n$ and with $p = p_s$.
 We can then contemplate estimating $n$, or simply the number of unseen chains of size 1, $u$ (with $s$ chains seen, $s + u = n$).
 [Hunter and Griffiths (1978)](https://www.tandfonline.com/doi/pdf/10.1080/00401706.1978.10489666) provide a posterior distribution $\text{Pr}(u \mid p_s, s)$.
-Given an improper power-law prior on the total number of (seen and unseen) chains $s + u$, they show (Equations 3 + 4) that the distribution $\text{Pr}(u \mid p_s, s)$ is Negative Binomial, with size parameter $s + 1$ and probability $p_s$.
+Given an improper uniform prior on the total number of (seen and unseen) chains $s + u$, they show (Equations 3 + 4) that the distribution $\text{Pr}(u \mid p_s, s)$ is Negative Binomial, with size parameter $s + 1$ and probability $p_s$.
 Since $p_s$ is a deterministic function of our model parameters (and known minimum chain size cutoff), we can write it as $p_{s}(R, k, m)$ and obtain the marginal distribution
 
 $$
