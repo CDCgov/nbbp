@@ -52,7 +52,7 @@ Both amount to acknowledging that this chain did not go extinct due to any featu
 ### Treat it as non-extinct
 
 We can simply declare that this chain did not go extinct.
-Mathematically this requires partitioning outcomes into exctinct and non-extinct chains and considering them separately.
+Mathematically this requires partitioning outcomes into extinct and non-extinct chains and considering them separately.
 But in practice with `nbbp` this is done by declaring the size of a chain to be `Inf` (which is the package's shorthand for non-extinct).
 Note that this will force $R > 1$ because when $R < 1$ _every_ chain _must_ go extinct.
 
