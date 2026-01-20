@@ -74,6 +74,16 @@ data {
   int<lower=0> dim_ccdf; // number of points at which we evaluate the complement of the CDF (1 - CDF(x), for probabilities of censored chain sizes and conditioning on sampling chains of at least a certain size)
   int ccdf_points[dim_ccdf]; // points at which we evaluate the CCDF (sizes of censored chains and conditioned likelihoods)
   real ccdf_exps[dim_ccdf]; //  exponents on CCDFs in the likelihood (# censored at this size - # observations which are conditioned to be >= this size)
+  int<lower=0> max_partial; // maximum size to which we marginalize probabilities of partially-observed chains
+  int<lower=0> dim_partial_probs; // number of distinct per-case observation probabilities
+  int<lower=0> dim_partial_points; // number of distinct partially-observed chain sizes
+  int<lower=0> dim_partial_exps; // number of (flattened) prob x size combos for which we compute likelihoods of partially observed chains
+  real<lower=0.0,upper=1.0> partial_probs[dim_partial_probs]; // the distinct per-case observation probabilities
+  real<lower=0.0> partial_cond_counts[dim_partial_probs]; // the number of chains at each sampling probability, used to condition the likelihood on observing chains
+  int<lower=0> partial_points[dim_partial_points]; // the distinct partially-observed chain sizes
+  real<lower=0.0> partial_exps[dim_partial_exps]; // numbers of times we see each (flattened) prob x size combos for partially-observed chains
+  int<lower=1,upper=dim_partial_points> partial_point_indices[dim_partial_exps]; // for each combo, which entry in partial_probs is its probability?
+  int<lower=1,upper=dim_partial_probs> partial_prob_indices[dim_partial_exps]; // for each combo, which entry in partial_points is its chain size?
 
   /* Hyperpriors */
   real<lower=0.0> shape_r_eff;
@@ -113,6 +123,7 @@ model {
   }
 
   if (use_likelihood == 1) {
+    // Completely observed chains
     if (dim_pmf > 0) {
       for (i in 1:dim_pmf) {
         // Equation 11
@@ -120,6 +131,7 @@ model {
       }
     }
 
+    // Chains with censored sizes
     if (dim_ccdf > 0) {
       vector[max_ccdf] log_ccdf = tabulate_log_ccdf(max_ccdf, r_eff, dispersion, exn_prob);
       for (i in 1:dim_ccdf) {
@@ -127,7 +139,35 @@ model {
       }
     }
 
-    // Probability of non-extinct chains
+    // Partially-observed (binomially-sampled) chains
+    if (dim_partial_probs > 0) {
+        vector[max_partial] chain_size_probs;
+        for (i in 1:max_partial) {
+            chain_size_probs[i] = chain_size_lpmf(i | r_eff, dispersion);
+        }
+        // Likelihoods
+        for (i in 1:dim_partial_exps) {
+            int size = partial_points[partial_point_indices[i]];
+            real prob = partial_probs[partial_prob_indices[i]];
+            int tail_size = max_partial - size + 1;
+            vector[tail_size] binom_probs;
+            for (j in size:max_partial) {
+                binom_probs[j - size + 1] = binomial_lpmf(size | j, prob);
+            }
+            target += partial_exps[i] * log_sum_exp(binom_probs + tail(chain_size_probs, tail_size));
+        }
+        // Conditioning
+        for (i in 1:dim_partial_probs) {
+            real prob = partial_probs[i];
+            vector[max_partial] binom_probs;
+            for (j in 1:max_partial) {
+                binom_probs[j] = binomial_lpmf(0 | j, prob);
+            }
+            target += -partial_cond_counts[i] * log1m(sum(exp(binom_probs) .* exp(chain_size_probs)));
+        }
+    }
+
+    // Non-extinct chains
     if (dim_non_extinct > 0) {
       target += dim_non_extinct * log(1.0 - exn_prob);
     }

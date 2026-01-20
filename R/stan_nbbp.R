@@ -21,6 +21,17 @@
 #' at least that size. If the ith chain size should be treated as censored at size m, set
 #' `censor_geq[i] = m`. The value of `all_outbreaks[i]` is irrelevant. NA for no censoring.
 #'
+#' Alternately, rather than censored, chains may be treated as incompletely observed.
+#' In this case, each case in the chain is assumed to be observed with an independent
+#' probability given by the corresponding entry in `partial_probs`, corresponding to
+#' a binomial sampling model for the observed chain size. The likelihood of observing a chain of
+#' size c, with sampling probability p, from a chain of true size u, is the sum from u = c to
+#' infinity of Pr(c | u, p) Pr(u | R, k), where the first term is a binomial sampling probability
+#' and the second the completely-observed NBBP likelihood. The value of `all_outbreaks[i]` is
+#' irrelevant for binomially-sampled chains. NA for no binomial sampling.
+#' In practice, we truncate this sum to a maximum determined by
+#' \link[nbbp]{.get_partial_ub}.
+#'
 #' Conditioning and/or right-censoring reveal that there are small numerical instabilities in the
 #' PMF which can make it sum to values ever so slightly larger than 1. This is handled by
 #' rescaling the CDF such that it does not exceed 1 in the range it needs to be evaluated.
@@ -33,6 +44,17 @@
 #' @param censor_geq optional, possibly per-chain, censoring, see details.
 #' @param condition_geq optional, possibly per-chain, conditioning on minimum observed chain size,
 #' see details.
+#' @param partial_geq optional, possibly per-chain, observed chain sizes with binomial sampling,
+#' see details.
+#' @param partial_probs optional, possibly per-chain, probabilities for incomplete observation,
+#' see details.
+#' @param partial_size_max optional, when incomplete sampling is present, can be used to
+#' manually specify upper limit for marginalizing chain size probability; default of NA
+#' corresponds to using adaptive bound via `partial_size_max_error`.
+#' @param partial_size_max_error optional, when incomplete sampling is present, a dynamic
+#' bound is computed for marginalizing the observed chain size probability over the
+#' unseen true chain size such that the numerical error is no larger than (and typically
+#' much smaller than, this value, as discussed in the "Details" vignette.
 #' @param shape_r_eff shape parameter of Gamma prior on r_eff.
 #' @param rate_r_eff rate parameter of Gamma prior on r_eff.
 #' @param sigma_inv_sqrt_dispersion scale of HalfNormal prior on 1 / sqrt(dispersion).
@@ -43,19 +65,28 @@
 #' @return an rstan stan_fit object
 #' @export
 fit_nbbp_homogenous_bayes <- function(
-    all_outbreaks,
-    censor_geq = rep(NA, length(all_outbreaks)),
-    condition_geq = rep(NA, length(all_outbreaks)),
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd,
-    iter = 5000,
-    control = list(adapt_delta = 0.9),
-    ...) {
+  all_outbreaks,
+  censor_geq = rep(NA, length(all_outbreaks)),
+  condition_geq = rep(1, length(all_outbreaks)),
+  partial_geq = rep(NA, length(all_outbreaks)),
+  partial_probs = rep(NA, length(all_outbreaks)),
+  partial_size_max = NA,
+  partial_size_max_error = 1e-5,
+  shape_r_eff = nbbp::default_res,
+  rate_r_eff = nbbp::default_res,
+  sigma_inv_sqrt_dispersion = nbbp::default_sisd,
+  iter = 5000,
+  control = list(adapt_delta = 0.9),
+  ...
+) {
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
     condition_geq = condition_geq,
+    partial_geq = partial_geq,
+    partial_probs = partial_probs,
+    partial_size_max = partial_size_max,
+    partial_size_max_error = partial_size_max_error,
     shape_r_eff = shape_r_eff,
     rate_r_eff = rate_r_eff,
     sigma_inv_sqrt_dispersion = sigma_inv_sqrt_dispersion,
@@ -105,6 +136,14 @@ fit_nbbp_homogenous_bayes <- function(
 #' @param censor_geq optional, possibly per-chain, censoring, see details.
 #' @param condition_geq optional, possibly per-chain, conditioning on minimum observed chain size,
 #' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_geq optional, possibly per-chain, observed chain sizes with binomial sampling,
+#' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_probs optional, possibly per-chain, probabilities for incomplete observation,
+#' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_size_max optional, maximum size for marginalization of probabilities of
+#' incompletely observed chains, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_size_max_error optional, dynamic probability threshold alternative to
+#' `partial_size_max``, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
 #' @param ci_width target width of the 95% confidence interval (coverage is not guaranteed)
 #' @param nboot number of parametric bootstrap replicates used for the 95% CI
 #' @param run_reps minimum number of random initializations for checking optimization performance,
@@ -129,16 +168,21 @@ fit_nbbp_homogenous_bayes <- function(
 #' and the log-likelihood
 #' @export
 fit_nbbp_homogenous_ml <- function(
-    all_outbreaks,
-    censor_geq = rep(NA, length(all_outbreaks)),
-    condition_geq = rep(NA, length(all_outbreaks)),
-    ci_width = 0.95,
-    nboot = 1000,
-    run_reps = 10,
-    max_tries = 50,
-    ci_method = "hybrid",
-    seed = NA,
-    ...) {
+  all_outbreaks,
+  censor_geq = rep(NA, length(all_outbreaks)),
+  condition_geq = rep(1, length(all_outbreaks)),
+  partial_geq = rep(NA, length(all_outbreaks)),
+  partial_probs = rep(NA, length(all_outbreaks)),
+  partial_size_max = NA,
+  partial_size_max_error = 1e-5,
+  ci_width = 0.95,
+  nboot = 1000,
+  run_reps = 10,
+  max_tries = 50,
+  ci_method = "hybrid",
+  seed = NA,
+  ...
+) {
   good_method <- ci_method %in% c("hybrid", "boot", "profile")
   stopifnot(
     "Unrecognized `ci_method`." = good_method
@@ -148,6 +192,10 @@ fit_nbbp_homogenous_ml <- function(
     all_outbreaks,
     censor_geq = censor_geq,
     condition_geq = condition_geq,
+    partial_geq = partial_geq,
+    partial_probs = partial_probs,
+    partial_size_max = partial_size_max,
+    partial_size_max_error = partial_size_max_error,
     run_reps = run_reps,
     max_tries = max_tries,
     seed = seed,
@@ -161,6 +209,10 @@ fit_nbbp_homogenous_ml <- function(
       all_outbreaks = all_outbreaks,
       censor_geq = censor_geq,
       condition_geq = condition_geq,
+      partial_geq = partial_geq,
+      partial_probs = partial_probs,
+      partial_size_max = partial_size_max,
+      partial_size_max_error = partial_size_max_error,
       ci_width = ci_width,
       ...
     )
@@ -171,6 +223,10 @@ fit_nbbp_homogenous_ml <- function(
       all_outbreaks = all_outbreaks,
       censor_geq = censor_geq,
       condition_geq = condition_geq,
+      partial_geq = partial_geq,
+      partial_probs = partial_probs,
+      partial_size_max = partial_size_max,
+      partial_size_max_error = partial_size_max_error,
       ci_width = ci_width,
       nboot = nboot,
       max_tries = max_tries,
@@ -203,17 +259,26 @@ fit_nbbp_homogenous_ml <- function(
 #' Maximum likelihood fitting function for NBBP
 #' @keywords internal
 .fit_nbbp_homogenous_ml <- function(
-    all_outbreaks,
-    censor_geq,
-    condition_geq,
-    run_reps,
-    max_tries,
-    seed,
-    ...) {
+  all_outbreaks,
+  censor_geq,
+  condition_geq,
+  partial_geq,
+  partial_probs,
+  partial_size_max,
+  partial_size_max_error,
+  run_reps,
+  max_tries,
+  seed,
+  ...
+) {
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
     condition_geq = condition_geq,
+    partial_geq = partial_geq,
+    partial_probs = partial_probs,
+    partial_size_max = partial_size_max,
+    partial_size_max_error = partial_size_max_error,
     shape_r_eff = 0.0,
     rate_r_eff = 0.0,
     sigma_inv_sqrt_dispersion = 0.0,
@@ -275,12 +340,17 @@ fit_nbbp_homogenous_ml <- function(
 #'
 #' @keywords internal
 .prof_nbbp_homogenous_lnl <- function(
-    fit,
-    all_outbreaks,
-    censor_geq,
-    condition_geq,
-    ci_width,
-    ...) {
+  fit,
+  all_outbreaks,
+  censor_geq,
+  condition_geq,
+  partial_geq,
+  partial_probs,
+  partial_size_max,
+  partial_size_max_error,
+  ci_width,
+  ...
+) {
   ci_alpha <- 1.0 - ci_width
   q_low <- ci_alpha / 2
   q_high <- 1.0 - q_low
@@ -293,6 +363,10 @@ fit_nbbp_homogenous_ml <- function(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
     condition_geq = condition_geq,
+    partial_geq = partial_geq,
+    partial_probs = partial_probs,
+    partial_size_max = partial_size_max,
+    partial_size_max_error = partial_size_max_error,
     shape_r_eff = 0.0,
     rate_r_eff = 0.0,
     sigma_inv_sqrt_dispersion = 0.0,
@@ -369,15 +443,20 @@ fit_nbbp_homogenous_ml <- function(
 #'
 #' @keywords internal
 .par_boot_nbbp_homogenous <- function(
-    fit,
-    all_outbreaks,
-    censor_geq,
-    condition_geq,
-    ci_width,
-    nboot,
-    max_tries,
-    seed,
-    ...) {
+  fit,
+  all_outbreaks,
+  censor_geq,
+  condition_geq,
+  partial_geq,
+  partial_probs,
+  partial_size_max,
+  partial_size_max_error,
+  ci_width,
+  nboot,
+  max_tries,
+  seed,
+  ...
+) {
   ci_alpha <- 1.0 - ci_width
   q_low <- ci_alpha / 2
   q_high <- 1.0 - q_low
@@ -406,6 +485,10 @@ fit_nbbp_homogenous_ml <- function(
       chain_sizes,
       censor_geq = censor_geq,
       condition_geq = condition_geq,
+      partial_geq = partial_geq,
+      partial_probs = partial_probs,
+      partial_size_max = partial_size_max,
+      partial_size_max_error = partial_size_max_error,
       run_reps = 1,
       max_tries = max_tries,
       seed = seed + max_tries * b,
@@ -452,14 +535,68 @@ fit_nbbp_homogenous_ml <- function(
 #' @param likelihood should the likelihood be included in joint density computations?
 #' @keywords internal
 .stan_data_nbbp_homogenous <- function(
-    all_outbreaks,
-    censor_geq,
-    condition_geq,
-    prior,
-    likelihood,
-    shape_r_eff,
-    rate_r_eff,
-    sigma_inv_sqrt_dispersion) {
+  all_outbreaks,
+  censor_geq,
+  condition_geq,
+  partial_geq,
+  partial_probs,
+  partial_size_max,
+  partial_size_max_error,
+  prior,
+  likelihood,
+  shape_r_eff,
+  rate_r_eff,
+  sigma_inv_sqrt_dispersion
+) {
+  partitioned <- .partition_data(
+    all_outbreaks = all_outbreaks,
+    censor_geq = censor_geq,
+    condition_geq = condition_geq,
+    partial_geq = partial_geq,
+    partial_probs = partial_probs
+  )
+
+  partial_info <- .get_partial_stan_data(
+    partitioned,
+    partial_size_max,
+    partial_size_max_error
+  )
+
+  nonpartial_info <- .get_nonpartial_stan_data(partitioned)
+
+  sdat <- c(
+    list(
+      use_prior = as.integer(prior),
+      use_likelihood = as.integer(likelihood),
+      shape_r_eff = shape_r_eff,
+      rate_r_eff = rate_r_eff,
+      sigma_inv_sqrt_dispersion = sigma_inv_sqrt_dispersion
+    ),
+    nonpartial_info,
+    partial_info
+  )
+
+  return(sdat)
+}
+
+#' Check some errors in and put chain size input data into more useful forms
+#'
+#' Splits (1) the single vector of all chain sizes up by what likelihood is used,
+#' (2) the single size conditioning vector up by whether the chain is partially
+#' observed or not, and (3) the per-chain observation probabilities into only those
+#' which correspond to actually partially observed chains.
+#'
+#' @details Does NOT account for places where we need to subtract 1 for stan interface.
+#'
+#' Arguments as in fit_nbbp_homogenous_bayes
+#' @keywords internal
+.partition_data <- function(
+  all_outbreaks,
+  censor_geq,
+  condition_geq,
+  partial_geq,
+  partial_probs
+) {
   stopifnot(
     "Length of `censor_geq` does not match length of `all_outbreaks`" = length(
       censor_geq
@@ -474,22 +611,88 @@ fit_nbbp_homogenous_ml <- function(
       length(all_outbreaks)
   )
 
-  uncensored <- all_outbreaks[is.na(censor_geq)]
-  censored <- censor_geq[!is.na(censor_geq)] - 1
   stopifnot(
-    "`censor_geq[i] = 1` implies no censoring and should be indicated with NA" = all(
-      censored > 0
-    )
+    "Length of `partial_geq` does not match length of `all_outbreaks`" = length(
+      partial_geq
+    ) ==
+      length(all_outbreaks)
   )
-  size_conditioned <- condition_geq[!is.na(condition_geq)] - 1
+
+  stopifnot(
+    "Length of `partial_probs` does not match length of `all_outbreaks`" = length(
+      partial_probs
+    ) ==
+      length(all_outbreaks)
+  )
+
+  not_mutually_exclusive <- any((!is.na(partial_geq)) & (!is.na(censor_geq)))
+  stopifnot(
+    "Chains cannot be both censored and partially observed" = !not_mutually_exclusive
+  )
+
+  # Sizes of chains for evaluating likelihoods
+  complete <- all_outbreaks[
+    is.na(censor_geq) & is.na(partial_geq)
+  ]
+  censored <- censor_geq[!is.na(censor_geq)]
+  partial <- partial_geq[!is.na(partial_geq)]
+
   stopifnot(
     "`size_conditioned[i] = 1` implies no conditioning and should be indicated with NA" = all(
       censored > 0
     )
   )
 
-  n_supercrit <- sum(is.infinite(uncensored))
-  pmf_tab <- table(uncensored[is.finite(uncensored)])
+  # Points at which we need Pr(observed size >= c) for conditioning
+  nonpartial_nontrivial_geq <- condition_geq[
+    is.na(partial_geq) & condition_geq > 1
+  ]
+  partial_probs <- partial_probs[!is.na(partial_geq)]
+  partial_geq <- condition_geq[!is.na(partial_geq)]
+
+  if (length(partial_geq) > 0) {
+    # Per-chain per-case sampling probabilities
+    # Can't use stopifnot because the message is too long and air keeps moving "# nolint: line_length_linter" to a newline
+    if (any(!is.na(partial_probs[is.na(partial_geq)]))) {
+      stop(paste0(
+        "Only partially observed chains should have",
+        " per-case sampling probabilities"
+      ))
+    }
+    stopifnot(
+      "All partially-observed chains must have per-case sampling probabilities." = all(
+        !is.na(partial_probs)
+      )
+    )
+  }
+
+  return(
+    list(
+      complete = complete,
+      censored = censored,
+      partial = partial,
+      nonpartial_geq = nonpartial_nontrivial_geq,
+      partial_geq = partial_geq,
+      partial_probs = partial_probs
+    )
+  )
+}
+
+#' Make the part of the stan data input list which pertains to non partially-observed chains
+#'
+#' This includes completely observed chains, infinite size chains, censored chains,
+#' and accounts for any necessary conditioning on seeing chains of at least a
+#' given size.
+#'
+#' @param partitioned_data output of .partition_data
+#' @keywords internal
+.get_nonpartial_stan_data <- function(
+  partitioned_data
+) {
+  n_supercrit <- sum(is.infinite(partitioned_data$complete))
+  pmf_tab <- table(partitioned_data$complete[is.finite(
+    partitioned_data$complete
+  )])
 
   # Handle case of no subcritical outbreaks
   pmf_exps <- integer(0)
@@ -499,14 +702,15 @@ fit_nbbp_homogenous_ml <- function(
     pmf_idx <- array(as.integer(names(pmf_tab)))
   }
 
-  # Merge censoring and conditioning
+  # Merge censoring and (for non partially-observed chains) conditioning
   # Since we multiply the posterior density by Pr(C >= c) for censored observations and
-  # divide it by Pr(C >= c) when conditioning observations, censoring and conditioning
-  # to the same size cancel out, and we can sometimes bypass their computation.
+  # divide it by Pr(C >= c) when conditioning non-partially-observed chain sizes,
+  # censoring and conditioning to the same size cancel out,
+  # and we can sometimes bypass their computation.
   cdf_exps <- integer(0)
   cdf_idx <- integer(0)
-  plus_cdf_tab <- table(censored)
-  minus_cdf_tab <- table(size_conditioned)
+  plus_cdf_tab <- table(partitioned_data$censored)
+  minus_cdf_tab <- table(partitioned_data$nonpartial_geq)
   has_plus_cdf <- length(plus_cdf_tab) > 0
   has_minus_cdf <- length(minus_cdf_tab) > 0
   if (has_plus_cdf || has_minus_cdf) {
@@ -522,23 +726,125 @@ fit_nbbp_homogenous_ml <- function(
     cdf_idx <- array(as.integer(names(cdf_tab)))
   }
 
-  sdat <- list(
-    use_prior = as.integer(prior),
-    use_likelihood = as.integer(likelihood),
-    dim_non_extinct = n_supercrit,
-    dim_pmf = length(pmf_idx),
-    pmf_points = pmf_idx,
-    pmf_exps = pmf_exps,
-    dim_ccdf = length(cdf_idx),
-    ccdf_points = cdf_idx,
-    ccdf_exps = cdf_exps,
-    shape_r_eff = shape_r_eff,
-    rate_r_eff = rate_r_eff,
-    sigma_inv_sqrt_dispersion = sigma_inv_sqrt_dispersion
+  return(
+    list(
+      dim_non_extinct = n_supercrit,
+      dim_pmf = length(pmf_idx),
+      pmf_points = pmf_idx,
+      pmf_exps = pmf_exps,
+      dim_ccdf = length(cdf_idx),
+      # In stan we actually compute 1 - CDF(x - 1), so to avoid carrying
+      # around the -1, we offset here
+      ccdf_points = cdf_idx - 1,
+      ccdf_exps = cdf_exps
+    )
   )
-
-  return(sdat)
 }
+
+#' Make the part of the stan data input list which pertains to partially-observed chains
+#'
+#' @param partitioned_data output of .partition_data
+#'
+#' @keywords internal
+.get_partial_stan_data <- function(
+  partitioned_data,
+  partial_size_max,
+  partial_size_max_error
+) {
+  partial_probs <- integer(0)
+  partial_points <- integer(0)
+  # The data form a tuple, which we have represented in flat form
+  # In our data, we have some number of observed chains of size c at observation
+  # probability p, so our likelihood includes a Pr(c | p)^n term
+  # We track these exponents in `partial_exps`, and in parallel we track
+  # c in `partial_point_indices` and p in `partial_prob_indices`
+  partial_exps <- integer(0)
+  partial_point_indices <- integer(0)
+  partial_prob_indices <- integer(0)
+  conditioning_counts <- integer(0)
+
+  # Count tuples
+  if (length(partitioned_data$partial) > 0) {
+    stopifnot(
+      "All incomplete chains must have per-case sampling probabilities < 1.0." = all(
+        partitioned_data$partial_probs < 1.0
+      )
+    )
+    stopifnot(
+      "All incomplete chains must have per-case sampling probabilities > 0.0." = all(
+        partitioned_data$partial_probs > 0.0
+      )
+    )
+
+    # Can't use stopifnot because the message is too long and air keeps moving "# nolint: line_length_linter" to a newline
+    if (any(partitioned_data$partial_geq < 1)) {
+      stop(paste0(
+        "Partially-observed chains must be conditioned",
+        " on a minimum observed chain size for a valid likelihood."
+      ))
+    }
+
+    if (any(partitioned_data$partial_geq != 1)) {
+      stop(paste0(
+        "Conditioning partially-observed chains on seeing at least",
+        " `c` cases for `c > 1` is not currently supported."
+      ))
+    }
+
+    stopifnot(
+      "Invalid partially-observed chain sizes." = all(
+        partitioned_data$sizes > 0
+      )
+    )
+    partial_probs <- unique(partitioned_data$partial_probs)
+    partial_points <- unique(partitioned_data$partial)
+    conditioning_counts <- numeric(length(partial_probs))
+    for (i in seq_along(partial_probs)) {
+      prob <- partial_probs[i]
+      conditioning_counts[i] <- sum(partitioned_data$partial_probs == prob)
+      for (j in seq_along(partial_points)) {
+        size <- partial_points[j]
+        count_at_size_prob <- sum(
+          partitioned_data$partial[partitioned_data$partial_probs == prob] ==
+            size
+        )
+
+        if (count_at_size_prob > 0) {
+          partial_exps <- c(partial_exps, count_at_size_prob)
+          partial_point_indices <- c(partial_point_indices, j)
+          partial_prob_indices <- c(partial_prob_indices, i)
+        }
+      }
+    }
+  }
+
+  # Get truncation for sum over unseen true case count
+  if (length(partitioned_data$partial) > 0) {
+    partial_size_max <- .get_partial_ub(
+      partitioned_data$partial,
+      partitioned_data$partial_probs,
+      size_max = partial_size_max,
+      error_max = partial_size_max_error
+    )
+  } else {
+    partial_size_max <- 0
+  }
+
+  res <- list(
+    dim_partial_probs = length(partial_probs),
+    dim_partial_points = length(partial_points),
+    dim_partial_exps = length(partial_exps),
+    partial_probs = array(partial_probs),
+    partial_cond_counts = array(conditioning_counts),
+    partial_points = array(partial_points),
+    partial_exps = array(partial_exps),
+    partial_point_indices = array(partial_point_indices),
+    partial_prob_indices = array(partial_prob_indices),
+    max_partial = partial_size_max
+  )
+  return(res)
+}
+
 
 #' Converts between R,k parameterization and that used internally in stan
 #'
@@ -575,21 +881,39 @@ fit_nbbp_homogenous_ml <- function(
 #' @param all_outbreaks vector containing the size of each outbreak, including the index case
 #' @param r_grid vector of values of R at which the likelihood is to be evaluated.
 #' @param k_grid vector of values of k at which the likelihood is to be evaluated.
-#' @param censor_geq optional, possibly per-chain, censoring, see details.
+#' @param censor_geq optional, possibly per-chain, censoring,
+#' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
 #' @param condition_geq optional, possibly per-chain, conditioning on minimum observed chain size,
 #' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_geq optional, possibly per-chain, observed chain sizes with binomial sampling,
+#' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_probs optional, possibly per-chain, probabilities for incomplete observation,
+#' see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_size_max optional maximum size for marginalization of probabilities of
+#' incompletely observed chains, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
+#' @param partial_size_max_error optional dynamic probability threshold alternative to
+#' `partial_size_max``, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.
 #' @return a long-form tibble of R, k, log-likelihood
 #' @export
 compute_likelihood_surface <- function(
-    all_outbreaks,
-    r_grid,
-    k_grid,
-    censor_geq = rep(NA, length(all_outbreaks)),
-    condition_geq = rep(NA, length(all_outbreaks))) {
+  all_outbreaks,
+  r_grid,
+  k_grid,
+  censor_geq = rep(NA, length(all_outbreaks)),
+  condition_geq = rep(1, length(all_outbreaks)),
+  partial_geq = rep(NA, length(all_outbreaks)),
+  partial_probs = rep(NA, length(all_outbreaks)),
+  partial_size_max = NA,
+  partial_size_max_error = 1e-5
+) {
   fake_sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
     condition_geq = condition_geq,
+    partial_geq = partial_geq,
+    partial_probs = partial_probs,
+    partial_size_max = partial_size_max,
+    partial_size_max_error = partial_size_max_error,
     shape_r_eff = 0.0,
     rate_r_eff = 0.0,
     sigma_inv_sqrt_dispersion = 0.0,

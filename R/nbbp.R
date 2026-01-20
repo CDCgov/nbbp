@@ -1,14 +1,16 @@
-#' Final outbreak size for negative binomial branching process
+#' Final observed outbreak size for negative binomial branching process
 #'
 #' @details
 #' In this model, every individual infects a Negative-Binomially-distributed
 #' number of additional individuals.
-#' The distribution is on the final number of infected individuals, including
-#' the index case.
 #'
-#' Blumberg et al 2014 (10.1093/aje/kwu068) equation 1, calls the terms in
-#' this PMF r(j), the probability that a transmission chain will
-#' have true size j.
+#' The functions `dnbbp`, `pnbbp`, and `rnbbp` all provide the "obvious" interfaces to the
+#' distribution on the final number of infected individuals, including
+#' the index case, seen in a sample.
+#'
+#' The PMF may be found in Blumberg et al 2013
+#' (10.1371/journal.pcbi.1002993) Equation 1, where the PMF terms are
+#' called r(j), the probability that a transmission chain will have true size j.
 #'
 #' When R >= 1.0, the process may not go extinct. In these cases, the outcome
 #' is dependent on the choice of `condition_on_extinction`.
@@ -19,31 +21,41 @@
 #'
 #' When R >= 1 and condition_on_extinction == TRUE, the model is conditioned on all chains going
 #' extinct. No infinitely-large chains are allowed.
+#' Binomial sampling will further reduce the number of observed cases.
 #'
 #' Nishiura et al 2012 (https://doi.org/10.1016/j.jtbi.2011.10.039) discuss the
 #' R > 1 case when conditioning on extinction.
 #'
-#' @param x final outbreak size, including the index case
+#' @param x final outbreak size, including the index case for d/p/rnbbp
 #' @param q as `x`
+#' @param n number of samples to draw
 #' @param r effective reproduction number
-#' @param k dispersion parameter: when <1, overdispersed
+#' @param k dispersion parameter
 #' @param condition_on_extinction logical, should we condition_on_extinction the process on
 #' extinction (TRUE) or not (FALSE)
-#' @param n number of samples to draw
 #' @param max_size when drawing samples, the pmf for non-infinite chains is truncated to
 #' this size determined. Infinite chains are still possible (and return Inf).
 #'
 #' @export
-dnbbp <- function(x, r, k, condition_on_extinction = FALSE) {
+dnbbp <- function(
+    x,
+    r,
+    k,
+    condition_on_extinction = FALSE) {
   stopifnot(all(x >= 1))
-  mass <- .dnbbp_subcrit(x, r, k, condition_on_extinction)
+  mass <- exp(.dnbbp_subcrit(
+    x = x,
+    r = r,
+    k = k,
+    condition_on_extinction = condition_on_extinction
+  ))
   if (!condition_on_extinction) {
     mass[x == Inf] <- 1.0 - nbbp_ep(r, k)$prob
   }
   mass
 }
 
-#' Optionally-conditioned log-scale PMF of the NBBP for finite chain sizes
+#' Optionally-conditioned log-scale PMF of the NBBP for completely-observed finite chain sizes
 #'
 #' See dnbbp
 #'
@@ -51,7 +63,8 @@ dnbbp <- function(x, r, k, condition_on_extinction = FALSE) {
 .dnbbp_subcrit <- function(x, r, k, condition_on_extinction) {
   .assert_r_realpos(r)
   prob_exn <- ifelse(condition_on_extinction, nbbp_ep(r, k)$prob, 1.0)
-  stats::dnbinom(x - 1, mu = r * x, size = k * x) / (x * prob_exn)
+  stats::dnbinom(x - 1, mu = r * x, size = k * x, log = TRUE) -
+    log(x * prob_exn)
 }
 
 #' @rdname dnbbp

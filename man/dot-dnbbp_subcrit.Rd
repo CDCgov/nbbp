@@ -2,7 +2,7 @@
 % Please edit documentation in R/nbbp.R
 \name{.dnbbp_subcrit}
 \alias{.dnbbp_subcrit}
-\title{Optionally-conditioned log-scale PMF of the NBBP for finite chain sizes}
+\title{Optionally-conditioned log-scale PMF of the NBBP for completely-observed finite chain sizes}
 \usage{
 .dnbbp_subcrit(x, r, k, condition_on_extinction)
 }
