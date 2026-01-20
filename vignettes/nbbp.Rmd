@@ -39,7 +39,7 @@ A NBBP is a branching process where the offspring distribution is $\mathrm{Negat
 The parameter $R$ is the mean of the distribution, the average number of infections caused by one infected individual, making it the reproduction number.
 The parameter $k$ controls the (over)dispersion of the distribution.
 When $k$ is small, the most probable number of offspring from any infection is $0$, even if $R > 1$.
-Howeverm the variance is large, such that some infections may have a large number of offspring.
+However, the variance is large, such that some infections may have a large number of offspring.
 As $k$ approaches infinity, the negative binomial distribution approaches the Poisson distribution, and the NBBP approaches a Poisson branching process.
 
 Aside from inference of $R$ and $k$ from final size data, `nbbp` implements R functions for computing the probability mass function (`dnbbp`), the cumlative distribution function (`pnbbp`), and random final size generation (`rnbbp`).
