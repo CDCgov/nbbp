@@ -15,7 +15,7 @@ There are more things in heaven and earth than are dreamt of in any model's view
 Nonetheless, some models in some circumstances are useful.
 
 Model adequacy is a broad umbrella for interrogating how well our model captures features of reality.
-If our model fails to adequately recapitulate features of the data which are important to our question, then it is unlikely to be giving us useful answers to our questions
+If our model fails to adequately recapitulate features of the data which are important to our question, then it is unlikely to be giving us useful answers to our questions.
 For example, if our model cannot capture the average final chain size in our data, we should not trust its estimates of $R$.
 But if our model _can_ adequately capture important features of the data, we have reason to hope its inferences are useful (at least, with respect to those features).
 
