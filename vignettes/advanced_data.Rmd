@@ -52,8 +52,8 @@ Both amount to acknowledging that this chain did not go extinct due to any featu
 ### Treat it as non-extinct
 
 We can simply declare that this chain did not go extinct.
-Mathematically this requires partitioning outcomes into exctinct and non-extinct chains and considering them separately.
-But in practice with `chainsR` this is done by declaring the size of a chain to be `Inf` (which is the package's shorthand for non-extinct).
+Mathematically this requires partitioning outcomes into extinct and non-extinct chains and considering them separately.
+But in practice with `nbbp` this is done by declaring the size of a chain to be `Inf` (which is the package's shorthand for non-extinct).
 Note that this will force $R > 1$ because when $R < 1$ _every_ chain _must_ go extinct.
 
 ```{r treat as inf, results=FALSE, warning=FALSE}
@@ -75,7 +75,7 @@ rstan::check_hmc_diagnostics(fit_inf)
 rstan::summary(fit_inf)$summary[, c("n_eff", "Rhat")]
 ```
 
-We see a small number of divergent transitions, but things look good on the whole.
+We see a small number of [divergent transitions](https://mc-stan.org/docs/reference-manual/mcmc.html#divergent-transitions), but things look good on the whole.
 
 Now we can look at what we estimated.
 
@@ -122,6 +122,7 @@ fit_cen
 ```
 
 We can see that now there is some probability that $R < 1$, corresponding to the possibility that this chain was simply large, but finite.
+(By counting the percent of samples where $R < 1$, we can see that this probability is `r round(mean(unlist(rstan::extract(fit_cen, "r_eff")) < 1), 2) * 100`%)
 We again see considerable uncertainty about $k$.
 
 ### Comparison

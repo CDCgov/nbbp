@@ -17,12 +17,34 @@ knitr::opts_chunk$set(
 )
 ```
 
-Welcome to `nbbp`, an R package for inference of parameters of negative binomial branching process models from final outbreak size data.
-This vignette covers the basics of inferring parameters from simple data, where every possible chain size is observable and every observed chain size is known exactly.
+Welcome to `nbbp`, an R package for inference of parameters of negative binomial branching process (NBBP) models from final outbreak size data.
+This vignette covers the basics of NBBPs and inferring parameters from simple data, where every possible chain size is observable and every observed chain size is known exactly.
 More advanced forms of data are covered in the "Advanced data" vignette.
-Note that a "chain" is not necessarily a linear structure and includes transmission trees.
-That is, it consists of the first infected individual, any and all individuals infected by the first, any and all individuals infected by the second generation, and so forth.
-But as we are working with the final size of a chain, each observation is simply an integer: the total number of infections, including the first.
+
+# The negative binomial branching process
+
+In a branching process, we start with an index case.
+The index case infects some number of individuals, given by the _offspring distribution_.
+If they infect no one, then the process has gone _extinct_.
+If they infect at least one individual, the process continues, with each of those individuals also causing a number of infections given by the offspring distribution, and so on and so forth.
+
+Mathematically, there are two limiting outcomes of a branching process: it either goes extinct, or the number of infections goes to infinity.
+Clearly, real outbreaks cannot become infinitely large.
+Branching process models are best suited to the early spread of infection after introduction, or to cases where $R \leq 1$, such that the extinction probability is 1.
+If the process goes extinct, then there is a finite _final size_ of the outbreak.
+We refer to the entire history of transmission as a _chain_, including the index case, so that the _chain size_ is the final size of the outbreak and takes values in $1, 2, \dots$.
+We discuss non-extinction in more depth in the "Advanced data" and "Details" vignettes.
+
+A NBBP is a branching process where the offspring distribution is $\mathrm{NegativeBinomial}(R, k)$.
+The parameter $R$ is the mean of the distribution, the average number of infections caused by one infected individual, making it the reproduction number.
+The parameter $k$ controls the (over)dispersion of the distribution.
+When $k$ is small, the most probable number of offspring from any infection is $0$, even if $R > 1$.
+However, the variance is large, such that some infections may have a large number of offspring.
+As $k$ approaches infinity, the negative binomial distribution approaches the Poisson distribution, and the NBBP approaches a Poisson branching process.
+
+Aside from inference of $R$ and $k$ from final size data, `nbbp` implements R functions for computing the probability mass function (`dnbbp`), the cumulative distribution function (`pnbbp`), and random final size generation (`rnbbp`).
+
+# Simple Bayesian inference
 
 As our example, we will analyze Borealpox.
 Currently, there are seven singleton cases which have been observed, each corresponding to a final chain size of 1.
@@ -35,7 +57,6 @@ data(borealpox)
 borealpox
 ```
 
-# Simple Bayesian inference
 
 Fitting the model is accomplished by passing the data and the model object to `fit_nbbp_homogenous_bayes()`, which internally uses `rstan` for inference.
 This function allows significant control over `rstan` settings, as well as adjustments to the default priors (for more on those, see the vignette "Default priors").
