@@ -63,7 +63,13 @@ fit_nbbp_homogenous_bayes <- function(
     likelihood = TRUE
   )
 
-  return(rstan::sampling(stanmodels$nbbp_homogenous, sdat, iter = iter, control = control, ...))
+  return(rstan::sampling(
+    stanmodels$nbbp_homogenous,
+    sdat,
+    iter = iter,
+    control = control,
+    ...
+  ))
 }
 
 
@@ -133,8 +139,9 @@ fit_nbbp_homogenous_ml <- function(
     ci_method = "hybrid",
     seed = NA,
     ...) {
+  good_method <- ci_method %in% c("hybrid", "boot", "profile")
   stopifnot(
-    "Unrecognized `ci_method`." = (ci_method %in% c("hybrid", "boot", "profile"))
+    "Unrecognized `ci_method`." = good_method
   )
 
   fit <- .fit_nbbp_homogenous_ml(
@@ -225,7 +232,12 @@ fit_nbbp_homogenous_ml <- function(
     } else {
       seed <- seed + 1
     }
-    fits[[i]] <- rstan::optimizing(stanmodels$nbbp_homogenous, sdat, seed = seed, ...)
+    fits[[i]] <- rstan::optimizing(
+      stanmodels$nbbp_homogenous,
+      sdat,
+      seed = seed,
+      ...
+    )
     if (fits[[i]]$return_code == 0) {
       successful[i] <- TRUE
     }
@@ -241,7 +253,9 @@ fit_nbbp_homogenous_ml <- function(
   }
   pars <- sapply(fits[successful], function(fit) {
     return(c(
-      log_likelihood = fit$value, fit$par["r_eff"], fit$par["dispersion"]
+      log_likelihood = fit$value,
+      fit$par["r_eff"],
+      fit$par["dispersion"]
     ))
   })
   fit <- fits[[which.max(pars["log_likelihood", ])]]
@@ -321,8 +335,8 @@ fit_nbbp_homogenous_ml <- function(
     (lnl - lnl_cutoff)^2
   }
 
-  k_low <- stats::optimize(r_fun, c(k_lb, fit$par["dispersion"]))$minimum
-  k_high <- stats::optimize(r_fun, c(fit$par["dispersion"], k_ub))$minimum
+  k_low <- stats::optimize(k_fun, c(k_lb, fit$par["dispersion"]))$minimum
+  k_high <- stats::optimize(k_fun, c(fit$par["dispersion"], k_ub))$minimum
 
   m <- matrix(c(r_low, r_high, k_low, k_high), 2, 2, byrow = TRUE)
   row.names(m) <- c("r_eff", "dispersion")
@@ -355,10 +369,18 @@ fit_nbbp_homogenous_ml <- function(
   n_obs <- length(all_outbreaks)
   all_boot_sizes <- NA
   if (is.na(seed)) {
-    all_boot_sizes <- nbbp::rnbbp(n_obs * nboot, fit$par["r_eff"], fit$par["dispersion"])
+    all_boot_sizes <- nbbp::rnbbp(
+      n_obs * nboot,
+      fit$par["r_eff"],
+      fit$par["dispersion"]
+    )
   } else {
     withr::with_seed(seed, {
-      all_boot_sizes <- nbbp::rnbbp(n_obs * nboot, fit$par["r_eff"], fit$par["dispersion"])
+      all_boot_sizes <- nbbp::rnbbp(
+        n_obs * nboot,
+        fit$par["r_eff"],
+        fit$par["dispersion"]
+      )
     })
   }
 
@@ -385,7 +407,6 @@ fit_nbbp_homogenous_ml <- function(
   r <- unname(fit$par["r_eff"])
   k <- unname(fit$par["dispersion"])
 
-
   m <- matrix(
     unname(
       c(
@@ -395,7 +416,8 @@ fit_nbbp_homogenous_ml <- function(
         k - unname(stats::quantile(k - boot["dispersion", ], q_low))
       ),
     ),
-    2, 2,
+    2,
+    2,
     byrow = TRUE
   )
 
@@ -423,25 +445,31 @@ fit_nbbp_homogenous_ml <- function(
     rate_r_eff,
     sigma_inv_sqrt_dispersion) {
   stopifnot(
-    "Length of `censor_geq` does not match length of `all_outbreaks`" =
-      length(censor_geq) == length(all_outbreaks)
+    "Length of `censor_geq` does not match length of `all_outbreaks`" = length(
+      censor_geq
+    ) ==
+      length(all_outbreaks)
   )
 
   stopifnot(
-    "Length of `condition_geq` does not match length of `all_outbreaks`" =
-      length(condition_geq) == length(all_outbreaks)
+    "Length of `condition_geq` does not match length of `all_outbreaks`" = length(
+      condition_geq
+    ) ==
+      length(all_outbreaks)
   )
 
   uncensored <- all_outbreaks[is.na(censor_geq)]
   censored <- censor_geq[!is.na(censor_geq)] - 1
   stopifnot(
-    "`censor_geq[i] = 1` implies no censoring and should be indicated with NA" =
-      all(censored > 0)
+    "`censor_geq[i] = 1` implies no censoring and should be indicated with NA" = all(
+      censored > 0
+    )
   )
   size_conditioned <- condition_geq[!is.na(condition_geq)] - 1
   stopifnot(
-    "`size_conditioned[i] = 1` implies no conditioning and should be indicated with NA" =
-      all(censored > 0)
+    "`size_conditioned[i] = 1` implies no conditioning and should be indicated with NA" = all(
+      censored > 0
+    )
   )
 
   n_supercrit <- sum(is.infinite(uncensored))
@@ -554,7 +582,11 @@ compute_likelihood_surface <- function(
   )
   r <- k <- NULL # to make R CMD check happy
   suppressMessages({
-    fake_fit <- rstan::sampling(stanmodels$nbbp_homogenous, fake_sdat, chains = 0)
+    fake_fit <- rstan::sampling(
+      stanmodels$nbbp_homogenous,
+      fake_sdat,
+      chains = 0
+    )
   })
   bound_r <- any(is.infinite(all_outbreaks[is.na(censor_geq)]))
 
@@ -562,16 +594,18 @@ compute_likelihood_surface <- function(
     r = r_grid,
     k = k_grid
   ) |>
-    dplyr::mutate(log_dens = purrr::pmap_dbl(
-      list(r, k),
-      function(r, k) {
-        rstan::log_prob(
-          fake_fit,
-          upars = .convert_stan_par(c(r, k), bound_r, to_stan = TRUE),
-          adjust_transform = FALSE
-        )
-      }
-    ))
+    dplyr::mutate(
+      log_dens = purrr::pmap_dbl(
+        list(r, k),
+        function(r, k) {
+          rstan::log_prob(
+            fake_fit,
+            upars = .convert_stan_par(c(r, k), bound_r, to_stan = TRUE),
+            adjust_transform = FALSE
+          )
+        }
+      )
+    )
 
   return(df)
 }
