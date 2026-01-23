@@ -306,7 +306,7 @@ fit_nbbp_homogenous_ml <- function(
 
   bound_r <- any(is.infinite(all_outbreaks[is.na(censor_geq)]))
   # R
-  r_lb <- 0.0
+  r_lb <- 1e-4
   r_ub <- 10.0
   if (bound_r) {
     r_lb <- 1.0
@@ -317,30 +317,42 @@ fit_nbbp_homogenous_ml <- function(
       fake_fit,
       upars = .convert_stan_par(c(r, point_k), bound_r, to_stan = TRUE)
     )
-    (lnl - lnl_cutoff)^2
+    lnl - lnl_cutoff
   }
 
-  r_low <- stats::optimize(r_fun, c(r_lb, fit$par["r_eff"]))$minimum
-  r_high <- stats::optimize(r_fun, c(fit$par["r_eff"], r_ub))$minimum
+  r_low <- stats::uniroot(
+    r_fun,
+    c(r_lb, fit$par["r_eff"]),
+    extendInt = "upX"
+  )$root
+  r_high <- stats::uniroot(
+    r_fun,
+    c(fit$par["r_eff"], r_ub),
+    extendInt = "downX"
+  )$root
 
   # k
-  log_k_lb <- log(1e-4)
-  log_k_ub <- log(1e4)
+  k_lb <- 1.0 / 10000.0
+  k_ub <- 10000.0
 
-  log_k_fun <- function(log_k) {
+  k_fun <- function(k) {
     lnl <- rstan::log_prob(
       fake_fit,
-      upars = .convert_stan_par(c(point_r, exp(log_k)), bound_r, to_stan = TRUE)
+      upars = .convert_stan_par(c(point_r, k), bound_r, to_stan = TRUE)
     )
-    (lnl - lnl_cutoff)^2
+    lnl - lnl_cutoff
   }
 
-  k_low <- exp(
-    stats::optimize(log_k_fun, c(log_k_lb, fit$par["dispersion"]))$minimum
-  )
-  k_high <- exp(
-    stats::optimize(log_k_fun, c(fit$par["dispersion"], log_k_ub))$minimum
-  )
+  k_low <- stats::uniroot(
+    k_fun,
+    c(k_lb, fit$par["dispersion"]),
+    extendInt = "upX"
+  )$root
+  k_high <- stats::uniroot(
+    k_fun,
+    c(fit$par["dispersion"], k_ub),
+    extendInt = "downX"
+  )$root
 
   m <- matrix(c(r_low, r_high, k_low, k_high), 2, 2, byrow = TRUE)
   row.names(m) <- c("r_eff", "dispersion")
