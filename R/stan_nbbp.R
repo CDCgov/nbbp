@@ -324,8 +324,20 @@ fit_nbbp_homogenous_ml <- function(
   r_high <- stats::optimize(r_fun, c(fit$par["r_eff"], r_ub))$minimum
 
   # k
+  log_k <- log(point_k)
   log_k_lb <- log(1e-4)
   log_k_ub <- log(1e4)
+  if (log_k < log_k_lb || log_k > log_k_ub) {
+    warning(
+      "Estimated value of k may cause problems with CIs based on likelihood profiling."
+    )
+  }
+  if (log_k < log_k_lb) {
+    log_k_lb <- log(.Machine$double.xmin)
+  }
+  if (log_k > log_k_ub) {
+    log_k_ub <- log(.Machine$double.xmax)
+  }
 
   log_k_fun <- function(log_k) {
     lnl <- rstan::log_prob(
@@ -336,10 +348,10 @@ fit_nbbp_homogenous_ml <- function(
   }
 
   k_low <- exp(
-    stats::optimize(log_k_fun, c(log_k_lb, fit$par["dispersion"]))$minimum
+    stats::optimize(log_k_fun, c(log_k_lb, log_k))$minimum
   )
   k_high <- exp(
-    stats::optimize(log_k_fun, c(fit$par["dispersion"], log_k_ub))$minimum
+    stats::optimize(log_k_fun, c(log_k, log_k_ub))$minimum
   )
 
   m <- matrix(c(r_low, r_high, k_low, k_high), 2, 2, byrow = TRUE)
