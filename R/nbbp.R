@@ -152,3 +152,53 @@ nb_param_convert <- function(size = NULL, prob = NULL, mu = NULL) {
   }
   return(res)
 }
+
+#' NBBP conditional mean and variance
+#'
+#' Uses equations for mean and variance of chain size from
+#' Waxman and Nouvellet(https://doi.org/10.1016/j.jtbi.2019.01.033)
+#'
+#' @param r effective reproduction number
+#' @param k dispersion parameter
+#' @return named vector providing the (conditioned on there being a finite
+#' chain size, i.e. on extinction) mean and variance of the final size.
+#'
+#' @export
+nbbp_stats <- function(r, k) {
+  r_is_one <- abs(r - 1.0) > .Machine$double.eps
+  stopifnot(
+    "The chain size mean and variance are undefined at R = 1" = r_is_one
+  )
+  # Per Waxman and Nouvellet, map to subcritical space and work there
+  if (r > 1.0) {
+    r <- nbbp_small_r(r, k)
+  }
+  offspring_var <- r + (r**2) / k
+  c(
+    mean = 1 / (1 - r),
+    var = offspring_var / ((1 - r)**3)
+  )
+}
+
+#' NBBP reproduction number symmetry
+#'
+#' @details
+#' Waxman and Nouvellet(https://doi.org/10.1016/j.jtbi.2019.01.033) show that,
+#' when conditioning on extinction, any supercritical R > 1 can be mapped to
+#' a subcritical R < 1 (keeping k constant) which produces identical distributions
+#' on the final chain size.
+#'
+#' @param r effective reproduction number, must be > 1
+#' @param k dispersion parameter
+#' @return the corresponding subcritical R < 1
+#'
+#' @export
+nbbp_small_r <- function(r, k) {
+  stopifnot("Symmetry calculations require R > 1" = r > 1.0)
+  one_point <- (length(r) == 1 && length(k) == 1)
+  stopifnot(
+    "Provide exactly one R,k value" = one_point
+  )
+  ep <- nbbp_ep(r, k)$prob
+  r * ep^(1 + 1 / k)
+}

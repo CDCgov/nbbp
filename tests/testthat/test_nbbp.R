@@ -102,7 +102,8 @@ test_that("parameter conversion works", {
     all(
       abs(
         mean_disp[c("mu", "size")] - c(r, k)
-      ) < testthat::testthat_tolerance()
+      ) <
+        testthat::testthat_tolerance()
     )
   )
 
@@ -132,4 +133,55 @@ test_that("extinction probability matches special cases", {
     nbbp_ep(r, k)$prob,
     (4 + r - sqrt(r^2 + 8 * r)) / (2 * r)
   )
+})
+
+
+test_that("symmetry computation works", {
+  r_vec <- 1.0 + c(0.1231, 0.54354, 1.21312, 3.35346)
+  k_vec <- c(0.07567, 0.68134781, 1.4574, 6454.4532)
+
+  # Do an ugly loop so this doesn't look like 16 tests, it's 1!
+  sizes <- 1:100
+  max_diffs <- c()
+  for (r in r_vec) {
+    for (k in k_vec) {
+      pr_large <- dnbbp(sizes, r, k, condition_on_extinction = TRUE)
+      pr_small <- dnbbp(
+        sizes,
+        nbbp_small_r(r, k),
+        k,
+        condition_on_extinction = TRUE
+      )
+      max_diffs <- c(max_diffs, max(abs(pr_large - pr_small)))
+    }
+  }
+  expect_equal(max(max_diffs), 0.0)
+})
+
+test_that("chain summary statistics are correct", {
+  r_vec <- c(0.1231, 0.54354, 1.21312, 3.35346)
+  k_vec <- c(0.10567, 0.68134781, 1.4574, 6454.4532)
+
+  # Do an ugly loop so this doesn't look like 16 tests
+  sizes <- 1:1e6
+  means_an <- c()
+  means_bf <- c()
+  vars_an <- c()
+  vars_bf <- c()
+  for (r in r_vec) {
+    for (k in k_vec) {
+      pr <- dnbbp(sizes, r, k, condition_on_extinction = TRUE)
+      m <- sum(sizes * pr)
+      v <- sum(((sizes - m)^2) * pr)
+      brute_force <- c("mean" = m, "var" = v)
+      analytical <- nbbp_stats(r, k)
+
+      means_an <- c(means_an, brute_force["mean"])
+      means_bf <- c(means_bf, analytical["mean"])
+      vars_an <- c(vars_an, analytical["var"])
+      vars_bf <- c(vars_bf, brute_force["var"])
+    }
+  }
+  expect_equal(means_an, means_bf, tolerance = 1e-6)
+  expect_equal(vars_an, vars_bf, tolerance = 1e-6)
 })
