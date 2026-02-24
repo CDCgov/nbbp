@@ -181,6 +181,7 @@ fit_nbbp_homogenous_ml <- function(
     ci_method = "hybrid",
     seed = NA,
     ...) {
+  .stop_if_not_mle_enabled()
   good_method <- ci_method %in% c("hybrid", "boot", "profile")
   stopifnot(
     "Unrecognized `ci_method`." = good_method
@@ -268,6 +269,7 @@ fit_nbbp_homogenous_ml <- function(
     max_tries,
     seed,
     ...) {
+  .stop_if_not_mle_enabled()
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
@@ -347,6 +349,7 @@ fit_nbbp_homogenous_ml <- function(
     partial_size_max_error,
     ci_width,
     ...) {
+  .stop_if_not_mle_enabled()
   ci_alpha <- 1.0 - ci_width
   q_low <- ci_alpha / 2
   q_high <- 1.0 - q_low
@@ -452,6 +455,7 @@ fit_nbbp_homogenous_ml <- function(
     max_tries,
     seed,
     ...) {
+  .stop_if_not_mle_enabled()
   ci_alpha <- 1.0 - ci_width
   q_low <- ci_alpha / 2
   q_high <- 1.0 - q_low
@@ -542,6 +546,9 @@ fit_nbbp_homogenous_ml <- function(
     shape_r_eff,
     rate_r_eff,
     sigma_inv_sqrt_dispersion) {
+  if (!isTRUE(prior)) {
+    .stop_if_not_mle_enabled()
+  }
   partitioned <- .partition_data(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
