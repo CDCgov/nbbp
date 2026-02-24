@@ -527,8 +527,15 @@ test_that("stan censored and nbbp agree on real data for many parameter values",
 })
 
 test_that("Users can specify the minimum without error", {
-  chains <- c(rep(1, 7), rep(2, 3))
+  chains <- c(rep(1, 7), rep(2, 3), 10)
   expect_no_error(
+    fit_nbbp_homogenous_ml(chains, ci_method = "profile", seed = 1)
+  )
+})
+
+test_that("Our warning about bad k trips", {
+  chains <- c(rep(1, 7), rep(2, 3))
+  expect_warning(
     fit_nbbp_homogenous_ml(chains, ci_method = "profile", seed = 1)
   )
 })
