@@ -65,20 +65,19 @@
 #' @return an rstan stan_fit object
 #' @export
 fit_nbbp_homogenous_bayes <- function(
-  all_outbreaks,
-  censor_geq = rep(NA, length(all_outbreaks)),
-  condition_geq = rep(1, length(all_outbreaks)),
-  partial_geq = rep(NA, length(all_outbreaks)),
-  partial_probs = rep(NA, length(all_outbreaks)),
-  partial_size_max = NA,
-  partial_size_max_error = 1e-5,
-  shape_r_eff = nbbp::default_res,
-  rate_r_eff = nbbp::default_res,
-  sigma_inv_sqrt_dispersion = nbbp::default_sisd,
-  iter = 5000,
-  control = list(adapt_delta = 0.9),
-  ...
-) {
+    all_outbreaks,
+    censor_geq = rep(NA, length(all_outbreaks)),
+    condition_geq = rep(1, length(all_outbreaks)),
+    partial_geq = rep(NA, length(all_outbreaks)),
+    partial_probs = rep(NA, length(all_outbreaks)),
+    partial_size_max = NA,
+    partial_size_max_error = 1e-5,
+    shape_r_eff = nbbp::default_res,
+    rate_r_eff = nbbp::default_res,
+    sigma_inv_sqrt_dispersion = nbbp::default_sisd,
+    iter = 5000,
+    control = list(adapt_delta = 0.9),
+    ...) {
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
@@ -168,21 +167,20 @@ fit_nbbp_homogenous_bayes <- function(
 #' and the log-likelihood
 #' @export
 fit_nbbp_homogenous_ml <- function(
-  all_outbreaks,
-  censor_geq = rep(NA, length(all_outbreaks)),
-  condition_geq = rep(1, length(all_outbreaks)),
-  partial_geq = rep(NA, length(all_outbreaks)),
-  partial_probs = rep(NA, length(all_outbreaks)),
-  partial_size_max = NA,
-  partial_size_max_error = 1e-5,
-  ci_width = 0.95,
-  nboot = 1000,
-  run_reps = 10,
-  max_tries = 50,
-  ci_method = "hybrid",
-  seed = NA,
-  ...
-) {
+    all_outbreaks,
+    censor_geq = rep(NA, length(all_outbreaks)),
+    condition_geq = rep(1, length(all_outbreaks)),
+    partial_geq = rep(NA, length(all_outbreaks)),
+    partial_probs = rep(NA, length(all_outbreaks)),
+    partial_size_max = NA,
+    partial_size_max_error = 1e-5,
+    ci_width = 0.95,
+    nboot = 1000,
+    run_reps = 10,
+    max_tries = 50,
+    ci_method = "hybrid",
+    seed = NA,
+    ...) {
   good_method <- ci_method %in% c("hybrid", "boot", "profile")
   stopifnot(
     "Unrecognized `ci_method`." = good_method
@@ -259,18 +257,17 @@ fit_nbbp_homogenous_ml <- function(
 #' Maximum likelihood fitting function for NBBP
 #' @keywords internal
 .fit_nbbp_homogenous_ml <- function(
-  all_outbreaks,
-  censor_geq,
-  condition_geq,
-  partial_geq,
-  partial_probs,
-  partial_size_max,
-  partial_size_max_error,
-  run_reps,
-  max_tries,
-  seed,
-  ...
-) {
+    all_outbreaks,
+    censor_geq,
+    condition_geq,
+    partial_geq,
+    partial_probs,
+    partial_size_max,
+    partial_size_max_error,
+    run_reps,
+    max_tries,
+    seed,
+    ...) {
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
@@ -340,17 +337,16 @@ fit_nbbp_homogenous_ml <- function(
 #'
 #' @keywords internal
 .prof_nbbp_homogenous_lnl <- function(
-  fit,
-  all_outbreaks,
-  censor_geq,
-  condition_geq,
-  partial_geq,
-  partial_probs,
-  partial_size_max,
-  partial_size_max_error,
-  ci_width,
-  ...
-) {
+    fit,
+    all_outbreaks,
+    censor_geq,
+    condition_geq,
+    partial_geq,
+    partial_probs,
+    partial_size_max,
+    partial_size_max_error,
+    ci_width,
+    ...) {
   ci_alpha <- 1.0 - ci_width
   q_low <- ci_alpha / 2
   q_high <- 1.0 - q_low
@@ -443,20 +439,19 @@ fit_nbbp_homogenous_ml <- function(
 #'
 #' @keywords internal
 .par_boot_nbbp_homogenous <- function(
-  fit,
-  all_outbreaks,
-  censor_geq,
-  condition_geq,
-  partial_geq,
-  partial_probs,
-  partial_size_max,
-  partial_size_max_error,
-  ci_width,
-  nboot,
-  max_tries,
-  seed,
-  ...
-) {
+    fit,
+    all_outbreaks,
+    censor_geq,
+    condition_geq,
+    partial_geq,
+    partial_probs,
+    partial_size_max,
+    partial_size_max_error,
+    ci_width,
+    nboot,
+    max_tries,
+    seed,
+    ...) {
   ci_alpha <- 1.0 - ci_width
   q_low <- ci_alpha / 2
   q_high <- 1.0 - q_low
@@ -535,19 +530,18 @@ fit_nbbp_homogenous_ml <- function(
 #' @param likelihood should the likelihood be included in joint density computations?
 #' @keywords internal
 .stan_data_nbbp_homogenous <- function(
-  all_outbreaks,
-  censor_geq,
-  condition_geq,
-  partial_geq,
-  partial_probs,
-  partial_size_max,
-  partial_size_max_error,
-  prior,
-  likelihood,
-  shape_r_eff,
-  rate_r_eff,
-  sigma_inv_sqrt_dispersion
-) {
+    all_outbreaks,
+    censor_geq,
+    condition_geq,
+    partial_geq,
+    partial_probs,
+    partial_size_max,
+    partial_size_max_error,
+    prior,
+    likelihood,
+    shape_r_eff,
+    rate_r_eff,
+    sigma_inv_sqrt_dispersion) {
   partitioned <- .partition_data(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
@@ -591,12 +585,11 @@ fit_nbbp_homogenous_ml <- function(
 #' Arguments as in fit_nbbp_homogenous_bayes
 #' @keywords internal
 .partition_data <- function(
-  all_outbreaks,
-  censor_geq,
-  condition_geq,
-  partial_geq,
-  partial_probs
-) {
+    all_outbreaks,
+    censor_geq,
+    condition_geq,
+    partial_geq,
+    partial_probs) {
   stopifnot(
     "Length of `censor_geq` does not match length of `all_outbreaks`" = length(
       censor_geq
@@ -636,6 +629,14 @@ fit_nbbp_homogenous_ml <- function(
   ]
   censored <- censor_geq[!is.na(censor_geq)]
   partial <- partial_geq[!is.na(partial_geq)]
+
+  if (length(censored) > 0) {
+    stopifnot(
+      "A censored chain has size >= 1 with probability one regardless of R and k." = all(
+        censored > 1
+      )
+    )
+  }
 
   stopifnot(
     "`size_conditioned[i] = 1` implies no conditioning and should be indicated with NA" = all(
@@ -687,8 +688,7 @@ fit_nbbp_homogenous_ml <- function(
 #' @param partitioned_data output of .partition_data
 #' @keywords internal
 .get_nonpartial_stan_data <- function(
-  partitioned_data
-) {
+    partitioned_data) {
   n_supercrit <- sum(is.infinite(partitioned_data$complete))
   pmf_tab <- table(partitioned_data$complete[is.finite(
     partitioned_data$complete
@@ -747,10 +747,9 @@ fit_nbbp_homogenous_ml <- function(
 #'
 #' @keywords internal
 .get_partial_stan_data <- function(
-  partitioned_data,
-  partial_size_max,
-  partial_size_max_error
-) {
+    partitioned_data,
+    partial_size_max,
+    partial_size_max_error) {
   partial_probs <- integer(0)
   partial_points <- integer(0)
   # The data form a tuple, which we have represented in flat form
@@ -896,16 +895,15 @@ fit_nbbp_homogenous_ml <- function(
 #' @return a long-form tibble of R, k, log-likelihood
 #' @export
 compute_likelihood_surface <- function(
-  all_outbreaks,
-  r_grid,
-  k_grid,
-  censor_geq = rep(NA, length(all_outbreaks)),
-  condition_geq = rep(1, length(all_outbreaks)),
-  partial_geq = rep(NA, length(all_outbreaks)),
-  partial_probs = rep(NA, length(all_outbreaks)),
-  partial_size_max = NA,
-  partial_size_max_error = 1e-5
-) {
+    all_outbreaks,
+    r_grid,
+    k_grid,
+    censor_geq = rep(NA, length(all_outbreaks)),
+    condition_geq = rep(1, length(all_outbreaks)),
+    partial_geq = rep(NA, length(all_outbreaks)),
+    partial_probs = rep(NA, length(all_outbreaks)),
+    partial_size_max = NA,
+    partial_size_max_error = 1e-5) {
   fake_sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
     censor_geq = censor_geq,
