@@ -911,20 +911,22 @@ compute_likelihood_surface <- function(
     partial_probs = rep(NA, length(all_outbreaks)),
     partial_size_max = NA,
     partial_size_max_error = 1e-5) {
-  fake_sdat <- .stan_data_nbbp_homogenous(
-    all_outbreaks = all_outbreaks,
-    censor_geq = censor_geq,
-    condition_geq = condition_geq,
-    partial_geq = partial_geq,
-    partial_probs = partial_probs,
-    partial_size_max = partial_size_max,
-    partial_size_max_error = partial_size_max_error,
-    shape_r_eff = 0.0,
-    rate_r_eff = 0.0,
-    sigma_inv_sqrt_dispersion = 0.0,
-    prior = FALSE,
-    likelihood = TRUE
-  )
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    fake_sdat <- .stan_data_nbbp_homogenous(
+      all_outbreaks = all_outbreaks,
+      censor_geq = censor_geq,
+      condition_geq = condition_geq,
+      partial_geq = partial_geq,
+      partial_probs = partial_probs,
+      partial_size_max = partial_size_max,
+      partial_size_max_error = partial_size_max_error,
+      shape_r_eff = 0.0,
+      rate_r_eff = 0.0,
+      sigma_inv_sqrt_dispersion = 0.0,
+      prior = FALSE,
+      likelihood = TRUE
+    )
+  })
   r <- k <- NULL # to make R CMD check happy
   suppressMessages({
     fake_fit <- rstan::sampling(
