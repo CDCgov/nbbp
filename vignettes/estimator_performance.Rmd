@@ -120,8 +120,8 @@ plot_point_ests_covar <- function(param, covar) {
 ## $R$
 
 First, let us examine estimation of $R$ aggregated across all simulated values of $k$ and all dataset sizes
-We can see that the two approaches have some similar behaviors, in that they both tend to underestimate $R$ when the true $R \approx 1$ and neither does amazingly well when the true $R = 2$.
-In general, it would seem that the posterior median is a better estimator than the maximum likelihood value, though at smaller values of $R$ maximum likelihood is slightly better on average (though with rather extreme variance when the sample size is very small, as we will see below).
+We can see that the two approaches have some similar behaviors, in that they both tend to underestimate $R$ when the true $R \approx 1$ and neither does amazingly well when the true $R = 2$ (Bayesian estimates are somewhat biased, maximum likelihood estimates very high-variance).
+In general, unless $R$ is particularly large or small, it would seem that the posterior median is a better estimator than the maximum likelihood value, and as we will see later it handles better the small sample size case.
 
 ```{r, message=FALSE, warning=FALSE}
 plot_point_ests("r")
@@ -336,15 +336,13 @@ plot_coverage_covar("r", "k_true")
 ```
 
 ## $k$
-Coverage of $k$ is also generally quite good gor confidence and credible intervals.
+Coverage of $k$ is also generally good for confidence and credible intervals.
+Both confidence and credible intervals for $k$ perform better when $R$ is closer to 1, though credible intervals for are less sensitive to $R$ than confidence intervals.
+The effect of larger dataset sizes is somewhat more subdued than for $R$, but more data does improve coverage.
 
 ```{r, message=FALSE, warning=FALSE}
 plot_coverage("k") + coord_cartesian(ylim = c(0.7, 1))
 ```
-
-Coverage of credible intervals for $R \gtrapprox 0.5$, however, is quite good.
-Analogously with intervals for $R$, credible intervals for $k$ are less sensitive to $R$ than confidence intervals.
-The effect of larger dataset sizes is somewhat more subdued than for $R$, but more data does improve coverage.
 
 ### By number of chains in dataset
 ```{r, message=FALSE, warning=FALSE}
@@ -363,7 +361,7 @@ Coverage is not the only thing we care about with our CIs.
 We also care about how narrow or wide the intervals are: all else equal, we'd prefer a narrower interval.
 
 Here, all else is not always equal exactly equal, though coverage is often qualitatively similar.
-However, credible intervals are often much, much narrower than confidence intervals.
+Credible intervals are often much, much narrower than confidence intervals.
 For $R$, the width of credible intervals is often 50\% or less of the width of confidence intervals.
 For $k$, the width of credible intervals can be less than 1\% of the width of confidence intervals.
 This is not an absolute for either $R$ or $k$; sometimes credible intervals are wider, though credible are basically never as much wider than confidence intervals as confidence intervals are than credible intervals.
