@@ -9,7 +9,11 @@ compute_likelihood_surface(
   r_grid,
   k_grid,
   censor_geq = rep(NA, length(all_outbreaks)),
-  condition_geq = rep(NA, length(all_outbreaks))
+  condition_geq = rep(1, length(all_outbreaks)),
+  partial_geq = rep(NA, length(all_outbreaks)),
+  partial_probs = rep(NA, length(all_outbreaks)),
+  partial_size_max = NA,
+  partial_size_max_error = 1e-05
 )
 }
 \arguments{
@@ -19,10 +23,23 @@ compute_likelihood_surface(
 
 \item{k_grid}{vector of values of k at which the likelihood is to be evaluated.}
 
-\item{censor_geq}{optional, possibly per-chain, censoring, see details.}
+\item{censor_geq}{optional, possibly per-chain, censoring,
+see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
 
 \item{condition_geq}{optional, possibly per-chain, conditioning on minimum observed chain size,
 see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_geq}{optional, possibly per-chain, observed chain sizes with binomial sampling,
+see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_probs}{optional, possibly per-chain, probabilities for incomplete observation,
+see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_size_max}{optional maximum size for marginalization of probabilities of
+incompletely observed chains, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_size_max_error}{optional dynamic probability threshold alternative to
+`partial_size_max``, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
 }
 \value{
 a long-form tibble of R, k, log-likelihood

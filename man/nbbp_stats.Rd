@@ -16,5 +16,6 @@ named vector providing the (conditioned on there being a finite
 chain size, i.e. on extinction) mean and variance of the final size.
 }
 \description{
-NBBP conditional mean and variance
+Uses equations for mean and variance of chain size from
+Waxman and Nouvellet(https://doi.org/10.1016/j.jtbi.2019.01.033)
 }

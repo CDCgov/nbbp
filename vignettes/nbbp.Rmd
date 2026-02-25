@@ -33,7 +33,7 @@ Clearly, real outbreaks cannot become infinitely large.
 Branching process models are best suited to the early spread of infection after introduction, or to cases where $R \leq 1$, such that the extinction probability is 1.
 If the process goes extinct, then there is a finite _final size_ of the outbreak.
 We refer to the entire history of transmission as a _chain_, including the index case, so that the _chain size_ is the final size of the outbreak and takes values in $1, 2, \dots$.
-We discuss non-extinction in more depth in the "Advanced data" and "Details" vignettes.
+We discuss non-extinction in more depth in the "Advanced data" and "Implementation details" vignettes.
 
 A NBBP is a branching process where the offspring distribution is $\mathrm{NegativeBinomial}(R, k)$.
 The parameter $R$ is the mean of the distribution, the average number of infections caused by one infected individual, making it the reproduction number.

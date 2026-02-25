@@ -213,3 +213,86 @@ k_df |>
 Note that while the analyses produced similar results here, that is not guaranteed to be the case in general.
 Differences are especially likely if the observed size of a non-extinct chain is not as large as it is here.
 Careful thought should be used to choose an analysis approach.
+
+## Missing cases
+
+Another time where the observed chain size may not be the true chain size is when we have partially-observed chains
+That is, we have some, but not all, of the cases in any given chain.
+In `nbbp`, this can be handled using a binomial sampling model.
+
+### Mathematics of the likelihood
+
+In this framework, a partially-observed chain has some observed size $c$, an unobserved true size $u \geq c$, and we assume that each observed case is independently sampled with probability $p$.
+We compute the likelihood of the observed chain size by marginalizing out $u$, yielding $\mathrm{Pr}(c \mid R, k, p) = \sum_{u = c}^\infty \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k)$.
+The first term is the (binomial) probability of seeing $c$ of $u$ cases, the second is the NBBP probability of a chain having size $u$.
+Unlike the censoring case, we cannot get clever with the law of total probability when computing this marginal.
+Instead, we use a sufficiently large $u_\mathrm{max}$ such that $\sum_{u = c}^{u_\mathrm{max}} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k)$ is sufficiently close to the correct infinite sum.
+(Details on how the package chooses this value are available in the documentation for `.get_partial_ub`.)
+
+### Example
+
+To examine the partially-observed scenario, we will work with simulated data.
+In our example, we will assume that all chains have a shared per-case sampling probability $p$.
+
+```{r}
+nchains <- 20
+
+withr::with_seed(42, {
+  true_chain_sizes <- rnbbp(nchains, r = 0.75, k = 0.25)
+})
+p <- 0.5
+
+observed_chain_sizes <- true_chain_sizes
+observed_chain_sizes <- rbinom(nchains, observed_chain_sizes, p)
+print(paste0("Number of unobserved chains: ", sum(observed_chain_sizes > 0)))
+observed_chain_sizes <- observed_chain_sizes[observed_chain_sizes > 0]
+
+print(paste0("Average true chain size: ", mean(true_chain_sizes)))
+print(paste0("Average observed chain size: ", mean(observed_chain_sizes)))
+```
+
+Our average observed chain size has decreased from `r {round(mean(true_chain_sizes), 2)}` to `r {round(mean(observed_chain_sizes), 2)}`.
+Why is the ratio of means `r {round(mean(observed_chain_sizes) / mean(true_chain_sizes), 2)}` different from our per-case sampling probability of `r {p}`?
+Note that the presence of incomplete sampling also means we can lose entire chains.
+Here we've lost `r {nchains - length(observed_chain_sizes)}` out of the `r {nchains}` we chose to simulate.
+These chains with no sampled cases are why the mean is different, and that we can't see them is why we must condition the likelihood of partially-observed chains on sampling at least one case.
+
+By default `nbbp` conditions all likelihoods on seeing at least one case in every chain.
+(When we have complete observations, this happens with probability 1 and can be ignored.)
+When inferring parameters from partially-observed chains, we need to tell `nbbp` what the sampling probabilities are.
+We do this on a per-chain basis, in case we have reason to believe that some have better or worse sampling than others.
+And as this parameter is not identifiable, we do not infer it but simply tell `nbbp` what it is.
+In real life, when we do not know, we can always perform analyses under a range of plausible values.
+
+```{r infer with binomial, results=FALSE}
+partial_geq <- observed_chain_sizes
+
+partial_probs <- rep(p, length(observed_chain_sizes))
+
+fit_incomplete <- fit_nbbp_homogenous_bayes(
+  all_outbreaks = observed_chain_sizes,
+  partial_geq = partial_geq,
+  partial_probs = partial_probs,
+  seed = 42
+)
+```
+
+As always, first we inspect the MCMC, in this case finding it worked well.
+
+```{r binomial mcmc}
+rstan::check_hmc_diagnostics(fit_incomplete)
+
+rstan::summary(fit_incomplete)$summary[, c("n_eff", "Rhat")]
+```
+
+Now we can look at what we estimated.
+
+```{r binomial res}
+fit_incomplete
+```
+
+We can see that we estimated both $R$ and $k$ relatively well.
+Missing cases don't have to be bad for inference, as long as we can appropriately accommodate them.
+Unfortunately, in the real world, matters can easily get more complex.
+No real observation process is as straightforward as the model, nor in general will we be sure about how what fraction of cases we have actually observed.
+Nevertheless, if we have a decent idea of what we might be missing (or a range of plausible values), and the binomial sampling model is not too badly misspecified, all is not lost.

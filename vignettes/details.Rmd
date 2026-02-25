@@ -99,6 +99,61 @@ When the CDF exceeds one, this is negative and MCMC cannot appropriately explore
 To avoid these issues, the `stan` model code checks that the CDF does not exceed 1 over the range it needs to be evaluated.
 If it ever exceeds 1, we rescale so that the maximum CDF is [`1.0 - machine_precision()`](https://mc-stan.org/docs/stan-users-guide/floating-point.html).
 
+## Incompletely observed chains
+
+Incompletely-observed chains require either inferring the unobserved true size via data augmentation or marginalizing the likelihood over the true size.
+We adopt the latter approach, which is implemented for a binomial sampling model of observed chain sizes as discussed in the "Advanced data" vignette.
+We must therefore approximate the infinite sum over the unobserved true size $u$ given the observed size $c$ and a per-case observation probability $p$:
+
+$$
+\mathrm{Pr}(c \mid R, k, p) = \sum_{u = c}^\infty \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k)
+$$
+In practice, we must evalutate the finite sum up to some $u_\mathrm{max}$, leaving an error,
+$$
+\begin{aligned}
+\mathrm{Pr}(c \mid R, k, p) &= \sum_{u = c}^{u_\mathrm{max}} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k) + \sum_{u = u_\mathrm{max} + 1}^{\infty} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k)\\
+&= \sum_{u = c}^{u_\mathrm{max}} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k) + \epsilon
+\end{aligned}
+$$
+
+Under the hood, `nbbp` uses a dynamic approximation to choose $u_\mathrm{max}$ such that the absolue error is _no larger than_ a pre-specified $\epsilon$.
+As we show below, by choosing $u_\mathrm{max}$ in terms of the quantile of a negative binomial distribution, we can achieve this bound.
+
+The bound can most readily be understood in two parts.
+First, and introducing a later-convenient factor of $p$,
+$$
+\begin{aligned}
+p \epsilon &= p \sum_{u = u_m + 1}^{\infty} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k)\\
+&\leq p\sum_{u = u_m + 1}^{\infty} \mathrm{Pr}(c \mid u, p)
+\end{aligned}
+$$
+
+Rewriting the RHS,
+$$
+\begin{aligned}
+p \sum_{u = u_m + 1}^{\infty} \mathrm{Pr}(c \mid u, p)
+&= p \sum_{u = u_m + 1}^{\infty} {u \choose c} p^{c} (1 - p)^{u - c}\\
+&= \sum_{u = u_m + 1}^{\infty} {u \choose c} p^{c + 1} (1 - p)^{u - c}\\
+&= \sum_{x = x_m + 1}^{\infty} {x + c \choose c} p^{c + 1} (1 - p)^x\\
+&= \sum_{x = x_m + 1}^{\infty} {x + n - 1 \choose c} p^{n} (1 - p)^x\\
+&= \sum_{x = x_m + 1}^{\infty}\frac{(x + n - 1)!}{x! \, \Gamma(n)} p^{n} (1 - p)^x
+\end{aligned}
+$$
+
+This can be recognized as the upper tail probability of a negative binomial distribution, in R's parameterization, with `prob` parameter $p$ and `size` parameter $n = c + 1$, evaluated at $x_m + 1 = u_m - c + 1$.
+Thus, and using the more common lower tail, we can write
+$$
+p \epsilon \leq 1 - \mathrm{CDF}_\mathrm{NB}(u_m - c; c + 1, p)
+$$
+Ergo, if we choose to set $x_m = u_m - c$ to the $(1 - p \epsilon)$ quantile of said negative binomial, we will keep the error no larger than $\epsilon$.
+That is,
+$$
+u_m - c := \mathrm{CDF}^{-1}_\mathrm{NB}(1 - p \epsilon; c + 1, p)
+$$
+
+In practice, this bound appears quite lenient.
+Numerical experiments suggest that, at default package settings for selecting $\epsilon = 10^{-5}$, the error is perhaps roughly $9 \times 10^{-10}$ on average and typically (much) smaller.
+
 # Approaches for confidence intervals
 
 While profiling of the likelihood is a common approach for generating confidence intervals for the negative binomial branching process model, we found that univariate profiling produced CIs with poor coverage properties for much of parameter space.

@@ -37,3 +37,68 @@ table_add_1d <- function(t1, t2, keep_zeros = FALSE) {
 .assert_r_realpos <- function(r) {
   stopifnot("R is 0, but must be positive finite!" = r > 0)
 }
+
+#' Obtains (possibly dynamic) maximum unobserved size of binomially-observed chains
+#'
+#' This function is intended for internal use only.
+#'
+#' @param obs_sizes the number of cases in all incompletely observed chains
+#' @param obs_probs the per-case observation probabilities for all chains in `obs_sizes`
+#' @param size_max optional integer override directly specifying the maximum unobserved chain size;
+#' if this is not NA, it will be used regardless of `error_max`, though with a warning if it yields
+#' a smaller truncation.
+#' @param error_max binomial tail probability for dynamic size computation (see details)
+#' @return maximum size for summing observation probabilities
+#' @details
+#' If `size_max` is an integer, it will be returned. Otherwise, following the math outlined
+#' in the "Implementation details" vignette, an upper bound is chosen such that the error in the
+#' marginal probability of observing a chain of size c is no more than `error_max`.
+#' @keywords internal
+.get_partial_ub <- function(obs_sizes, obs_probs, size_max, error_max) {
+  if (is.na(size_max)) {
+    stopifnot(
+      "If specifying `error_max` it must be in (0,1)." = is.numeric(
+        error_max
+      ) &&
+        error_max < 1.0 &&
+        error_max > 0.0
+    )
+  } else {
+    stopifnot(
+      "If specifying `size_max` it must be an integer." = (size_max %% 1 == 0)
+    )
+  }
+
+  if (!is.na(size_max)) {
+    errors <- sapply(seq_along(obs_sizes), function(i) {
+      cdf <- stats::pnbinom(
+        size_max,
+        size = obs_sizes[i] + 1,
+        prob = obs_probs[i]
+      )
+      (1.0 - cdf) / obs_probs[i]
+    })
+
+    if (max(errors) > ifelse(is.na(error_max), 1e-4, error_max)) {
+      warning(paste0(
+        "Specified `size_max` may be too low. It implies a `error_max` of ",
+        max(errors)
+      ))
+    }
+  } else {
+    per_chain_max <- sapply(seq_along(obs_sizes), function(i) {
+      stats::qnbinom(
+        1 - obs_probs[i] * error_max,
+        size = obs_sizes[i] + 1,
+        prob = obs_probs[i]
+      )
+    })
+    size_max <- max(per_chain_max)
+  }
+
+  impossible <- all(obs_sizes <= size_max)
+  stopifnot(
+    "`size_max` must be at least as large as the largest chain size" = impossible
+  )
+  return(size_max)
+}

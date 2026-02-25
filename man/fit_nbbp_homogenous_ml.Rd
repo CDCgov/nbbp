@@ -7,7 +7,11 @@
 fit_nbbp_homogenous_ml(
   all_outbreaks,
   censor_geq = rep(NA, length(all_outbreaks)),
-  condition_geq = rep(NA, length(all_outbreaks)),
+  condition_geq = rep(1, length(all_outbreaks)),
+  partial_geq = rep(NA, length(all_outbreaks)),
+  partial_probs = rep(NA, length(all_outbreaks)),
+  partial_size_max = NA,
+  partial_size_max_error = 1e-05,
   ci_width = 0.95,
   nboot = 1000,
   run_reps = 10,
@@ -24,6 +28,18 @@ fit_nbbp_homogenous_ml(
 
 \item{condition_geq}{optional, possibly per-chain, conditioning on minimum observed chain size,
 see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_geq}{optional, possibly per-chain, observed chain sizes with binomial sampling,
+see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_probs}{optional, possibly per-chain, probabilities for incomplete observation,
+see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_size_max}{optional, maximum size for marginalization of probabilities of
+incompletely observed chains, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
+
+\item{partial_size_max_error}{optional, dynamic probability threshold alternative to
+`partial_size_max``, see details in \link[nbbp]{fit_nbbp_homogenous_bayes}.}
 
 \item{ci_width}{target width of the 95\% confidence interval (coverage is not guaranteed)}
 

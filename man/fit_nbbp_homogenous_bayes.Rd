@@ -7,7 +7,11 @@
 fit_nbbp_homogenous_bayes(
   all_outbreaks,
   censor_geq = rep(NA, length(all_outbreaks)),
-  condition_geq = rep(NA, length(all_outbreaks)),
+  condition_geq = rep(1, length(all_outbreaks)),
+  partial_geq = rep(NA, length(all_outbreaks)),
+  partial_probs = rep(NA, length(all_outbreaks)),
+  partial_size_max = NA,
+  partial_size_max_error = 1e-05,
   shape_r_eff = nbbp::default_res,
   rate_r_eff = nbbp::default_res,
   sigma_inv_sqrt_dispersion = nbbp::default_sisd,
@@ -23,6 +27,21 @@ fit_nbbp_homogenous_bayes(
 
 \item{condition_geq}{optional, possibly per-chain, conditioning on minimum observed chain size,
 see details.}
+
+\item{partial_geq}{optional, possibly per-chain, observed chain sizes with binomial sampling,
+see details.}
+
+\item{partial_probs}{optional, possibly per-chain, probabilities for incomplete observation,
+see details.}
+
+\item{partial_size_max}{optional, when incomplete sampling is present, can be used to
+manually specify upper limit for marginalizing chain size probability; default of NA
+corresponds to using adaptive bound via \code{partial_size_max_error}.}
+
+\item{partial_size_max_error}{optional, when incomplete sampling is present, a dynamic
+bound is computed for marginalizing the observed chain size probability over the
+unseen true chain size such that the numerical error is no larger than (and typically
+much smaller than, this value, as discussed in the "Implementation details" vignette.}
 
 \item{shape_r_eff}{shape parameter of Gamma prior on r_eff.}
 
@@ -64,6 +83,17 @@ Right-censoring is permitted on a per-chain basis. That is, if there is some siz
 a chain can be said not to go extinct on its own, we can treat this as an observation of
 at least that size. If the ith chain size should be treated as censored at size m, set
 \code{censor_geq[i] = m}. The value of \code{all_outbreaks[i]} is irrelevant. NA for no censoring.
+
+Alternately, rather than censored, chains may be treated as incompletely observed.
+In this case, each case in the chain is assumed to be observed with an independent
+probability given by the corresponding entry in \code{partial_probs}, corresponding to
+a binomial sampling model for the observed chain size. The likelihood of observing a chain of
+size c, with sampling probability p, from a chain of true size u, is the sum from u = c to
+infinity of Pr(c | u, p) Pr(u | R, k), where the first term is a binomial sampling probability
+and the second the completely-observed NBBP likelihood. The value of \code{all_outbreaks[i]} is
+irrelevant for binomially-sampled chains. NA for no binomial sampling.
+In practice, we truncate this sum to a maximum determined by
+\link[nbbp]{.get_partial_ub}.
 
 Conditioning and/or right-censoring reveal that there are small numerical instabilities in the
 PMF which can make it sum to values ever so slightly larger than 1. This is handled by

@@ -9,6 +9,10 @@
   all_outbreaks,
   censor_geq,
   condition_geq,
+  partial_geq,
+  partial_probs,
+  partial_size_max,
+  partial_size_max_error,
   ci_width,
   ...
 )

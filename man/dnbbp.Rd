@@ -4,7 +4,7 @@
 \alias{dnbbp}
 \alias{pnbbp}
 \alias{rnbbp}
-\title{Final outbreak size for negative binomial branching process}
+\title{Final observed outbreak size for negative binomial branching process}
 \usage{
 dnbbp(x, r, k, condition_on_extinction = FALSE)
 
@@ -13,11 +13,11 @@ pnbbp(q, r, k)
 rnbbp(n, r, k, condition_on_extinction = FALSE, max_size = 1e+06)
 }
 \arguments{
-\item{x}{final outbreak size, including the index case}
+\item{x}{final outbreak size, including the index case for d/p/rnbbp}
 
 \item{r}{effective reproduction number}
 
-\item{k}{dispersion parameter: when <1, overdispersed}
+\item{k}{dispersion parameter}
 
 \item{condition_on_extinction}{logical, should we condition_on_extinction the process on
 extinction (TRUE) or not (FALSE)}
@@ -30,17 +30,19 @@ extinction (TRUE) or not (FALSE)}
 this size determined. Infinite chains are still possible (and return Inf).}
 }
 \description{
-Final outbreak size for negative binomial branching process
+Final observed outbreak size for negative binomial branching process
 }
 \details{
 In this model, every individual infects a Negative-Binomially-distributed
 number of additional individuals.
-The distribution is on the final number of infected individuals, including
-the index case.
 
-Blumberg et al 2014 (10.1093/aje/kwu068) equation 1, calls the terms in
-this PMF r(j), the probability that a transmission chain will
-have true size j.
+The functions \code{dnbbp}, \code{pnbbp}, and \code{rnbbp} all provide the "obvious" interfaces to the
+distribution on the final number of infected individuals, including
+the index case, seen in a sample.
+
+The PMF may be found in Blumberg et al 2013
+(10.1371/journal.pcbi.1002993) Equation 1, where the PMF terms are
+called r(j), the probability that a transmission chain will have true size j.
 
 When R >= 1.0, the process may not go extinct. In these cases, the outcome
 is dependent on the choice of \code{condition_on_extinction}.
@@ -51,6 +53,7 @@ In this case, \code{rnbbp} will record this size as Inf.
 
 When R >= 1 and condition_on_extinction == TRUE, the model is conditioned on all chains going
 extinct. No infinitely-large chains are allowed.
+Binomial sampling will further reduce the number of observed cases.
 
 Nishiura et al 2012 (https://doi.org/10.1016/j.jtbi.2011.10.039) discuss the
 R > 1 case when conditioning on extinction.

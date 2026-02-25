@@ -190,7 +190,7 @@ That is, a "good" 95% CI will be wrong 5% of the time.
 All things being equal, though, we'd generally rather it covered a bit too much rather than not quite enough.
 That is, 96% coverage would be preferable to 94%, but 94% is still better than 100%.
 
-As discussed in the "Details" vignette, the confidence intervals provided with maximum likelihood estimates use a hybrid approach, determining on a per-analysis basis whether to use parametric bootstrapping or likelihod profiling.
+As discussed in the "Implementation details" vignette, the confidence intervals provided with maximum likelihood estimates use a hybrid approach, determining on a per-analysis basis whether to use parametric bootstrapping or likelihod profiling.
 Coverage of confidence intervals varies strongly by the method used, and these results apply only to this strategy.
 
 [^1]: That is, assuming we want good frequentist properties from our Bayesian credible intervals. For the purposes of this comparison, we do. We leave philisophical matters aside as out of scope.
