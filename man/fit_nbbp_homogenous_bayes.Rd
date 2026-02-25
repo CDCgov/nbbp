@@ -41,7 +41,7 @@ corresponds to using adaptive bound via \code{partial_size_max_error}.}
 \item{partial_size_max_error}{optional, when incomplete sampling is present, a dynamic
 bound is computed for marginalizing the observed chain size probability over the
 unseen true chain size such that the numerical error is no larger than (and typically
-much smaller than, this value, as discussed in the "Details" vignette.}
+much smaller than, this value, as discussed in the "Implementation details" vignette.}
 
 \item{shape_r_eff}{shape parameter of Gamma prior on r_eff.}
 

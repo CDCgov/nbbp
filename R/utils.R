@@ -51,8 +51,8 @@ table_add_1d <- function(t1, t2, keep_zeros = FALSE) {
 #' @return maximum size for summing observation probabilities
 #' @details
 #' If `size_max` is an integer, it will be returned. Otherwise, following the math outlined
-#' in the "Details" vignette, an upper bound is chosen such that the error in the marginal
-#' probability of observing a chain of size c is no more than `error_max`.
+#' in the "Implementation details" vignette, an upper bound is chosen such that the error in the
+#' marginal probability of observing a chain of size c is no more than `error_max`.
 #' @keywords internal
 .get_partial_ub <- function(obs_sizes, obs_probs, size_max, error_max) {
   if (is.na(size_max)) {

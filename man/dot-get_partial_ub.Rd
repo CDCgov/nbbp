@@ -25,7 +25,7 @@ This function is intended for internal use only.
 }
 \details{
 If \code{size_max} is an integer, it will be returned. Otherwise, following the math outlined
-in the "Details" vignette, an upper bound is chosen such that the error in the marginal
+in the "Implementation details" vignette, an upper bound is chosen such that the error in the marginal
 probability of observing a chain of size c is no more than \code{error_max}.
 }
 \keyword{internal}
