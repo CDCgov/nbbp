@@ -123,7 +123,7 @@ The bound can most readily be understood in two parts.
 First, and introducing a later-convenient factor of $p$,
 $$
 \begin{aligned}
-p \epsilon &= p \sum_{u = u_m + 1}^{\infty} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid n, k)\\
+p \epsilon &= p \sum_{u = u_m + 1}^{\infty} \mathrm{Pr}(c \mid u, p) \mathrm{Pr}(u \mid R, k)\\
 &\leq p\sum_{u = u_m + 1}^{\infty} \mathrm{Pr}(c \mid u, p)
 \end{aligned}
 $$
