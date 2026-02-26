@@ -65,7 +65,7 @@ We can write the likelihood for one chain size $c$ as
 where the chain size which can take finite values $c = 0, 1, \dots$ as well as the value "$c = \infty$", $\mathbb{I}$ is the indicator function, and $\mathcal{E}$ ($\mathcal{E}^{\text{C}}$) is the event that the chain goes (does not go) extinct.
 For conditionally finite chains, we can write
 \begin{equation}
-\text{Pr}(c \mid R, k, \mathcal{E}) = {\text{Pr}(c, \mathcal{E} \mid R, k) \over \text{Pr}(\mathcal{E} \mid R, k)}  = {\text{Pr}(c \mid R, k) \over \text{Pr}(\mathcal{E} \mid R, k)}.
+\text{Pr}(c \mid R, k, \mathcal{E}) = \frac{\text{Pr}(c, \mathcal{E} \mid R, k)}{\text{Pr}(\mathcal{E} \mid R, k)}  = \frac{\text{Pr}(c \mid R, k)}{\text{Pr}(\mathcal{E} \mid R, k)}.
 \end{equation}
 Using this expression reduces the likelihood of chain size $c$ to
 \begin{equation}
