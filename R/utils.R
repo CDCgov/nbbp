@@ -102,3 +102,35 @@ table_add_1d <- function(t1, t2, keep_zeros = FALSE) {
   )
   return(size_max)
 }
+
+#' Attempts to ensure MLE is not used without user being aware of risks
+#'
+#' @keywords internal
+.stop_if_not_mle_enabled <- function() {
+  header <- paste0(
+    "Maximum likelihood estimation of chain size by numerical optimization ",
+    "is not recommended except for scientific purposes."
+  )
+  point_ests <- paste0(
+    "Point estimates have repeatedly proven to be unstable and highly sensitive ",
+    "to small perturbations."
+  )
+  cis <- paste0(
+    "Confidence intervals are liable to display pathologies or provoke numerical issues."
+  )
+  override <- paste0(
+    "To override this error and enable maximum likelihood estimation, set the environmental",
+    "variable `ENABLE_NBBP_MLE` to \"yes\": `sys.setenv(\"ENABLE_NBBP_MLE\" = \"yes\")`."
+  )
+
+  if (Sys.getenv("ENABLE_NBBP_MLE") != "yes") {
+    rlang::abort(
+      c(
+        header,
+        "*" = point_ests,
+        "*" = cis,
+        "i" = override
+      )
+    )
+  }
+}

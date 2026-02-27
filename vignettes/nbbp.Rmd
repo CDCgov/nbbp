@@ -148,15 +148,17 @@ However, the default priors pull towards regimes where this probability is small
 # Simple maximum likelihood inference
 
 The package also supports maximum likelihood inference.
-We do not suggest using maximum likelihood as the primary form of inference, but sometimes one may wish to see the results.
+This is disabled by default and we do not suggest using maximum likelihood as the primary form of inference, but sometimes one may wish to see the results.
 This can be accomplished with `fit_nbbp_homogenous_ml()` which has much the same interface as `fit_nbbp_homogenous_bayes()`.
 By default, this attempts to obtain 10 converged search replicates from random starting locations, and will adaptively determine an appropriate method for producing confidence intervals.
 ```{r, results=FALSE}
-fit_ml <- fit_nbbp_homogenous_ml(
-  all_outbreaks = borealpox,
-  seed = 42,
-  ci_width = 0.95
-)
+withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+  fit_ml <- fit_nbbp_homogenous_ml(
+    all_outbreaks = borealpox,
+    seed = 42,
+    ci_width = 0.95
+  )
+})
 ```
 
 The object returned here is a slightly enriched version of what is returned by `rstan::optimizing` for the replicate search which produced the maximum maximized likelihood.

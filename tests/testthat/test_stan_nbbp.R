@@ -110,20 +110,22 @@ test_that(".partition_data handles all-partials case", {
 })
 
 test_that(".stan_data_nbbp_homogenous runs without incident without edge cases", {
-  expect_no_error(.stan_data_nbbp_homogenous(
-    all_outbreaks = c(1, 2, 3, 3, 3, 4, 5, Inf, 9, 10),
-    censor_geq = c(rep(NA, 8), 3, 5),
-    condition_geq = rep(1, 10),
-    partial_geq = c(11, 12, rep(NA, 8)),
-    partial_probs = c(0.1, 0.2, rep(NA, 8)),
-    partial_size_max = 1e9,
-    partial_size_max_error = 1e-5,
-    prior = FALSE,
-    likelihood = TRUE,
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd
-  ))
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    expect_no_error(.stan_data_nbbp_homogenous(
+      all_outbreaks = c(1, 2, 3, 3, 3, 4, 5, Inf, 9, 10),
+      censor_geq = c(rep(NA, 8), 3, 5),
+      condition_geq = rep(1, 10),
+      partial_geq = c(11, 12, rep(NA, 8)),
+      partial_probs = c(0.1, 0.2, rep(NA, 8)),
+      partial_size_max = 1e9,
+      partial_size_max_error = 1e-5,
+      prior = FALSE,
+      likelihood = TRUE,
+      shape_r_eff = nbbp::default_res,
+      rate_r_eff = nbbp::default_res,
+      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+    ))
+  })
 })
 
 test_that(".get_nonpartial_stan_data works as expected", {
@@ -176,305 +178,317 @@ test_that(".get_partial_stan_data works as expected", {
 })
 
 test_that("stan uncensored log-likelihood agrees with nbbp", {
-  chain_sizes_small <- c(1, 1, 1, 2, 2, 10)
-  chain_sizes_big <- chain_sizes_small
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    chain_sizes_small <- c(1, 1, 1, 2, 2, 10)
+    chain_sizes_big <- chain_sizes_small
 
-  uncon_par_small <- c(-0.232, 1.123)
-  uncon_par_big <- c(0.642, -0.423)
+    uncon_par_small <- c(-0.232, 1.123)
+    uncon_par_big <- c(0.642, -0.423)
 
-  par_small <- .convert_stan_par(
-    uncon_par_small,
-    r_geq_1 = FALSE,
-    to_stan = FALSE
-  )
-  par_big <- .convert_stan_par(uncon_par_big, r_geq_1 = FALSE, to_stan = FALSE)
-
-  sdat_small <- .stan_data_nbbp_homogenous(
-    all_outbreaks = chain_sizes_small,
-    censor_geq = rep(NA, length(chain_sizes_small)),
-    condition_geq = rep(NA, length(chain_sizes_small)),
-    partial_geq = rep(NA, length(chain_sizes_small)),
-    partial_probs = rep(NA, length(chain_sizes_small)),
-    partial_size_max = NA,
-    partial_size_max_error = 1e-5,
-    prior = FALSE,
-    likelihood = TRUE,
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd
-  )
-
-  sdat_big <- .stan_data_nbbp_homogenous(
-    all_outbreaks = chain_sizes_big,
-    censor_geq = rep(NA, length(chain_sizes_big)),
-    condition_geq = rep(NA, length(chain_sizes_big)),
-    partial_geq = rep(NA, length(chain_sizes_big)),
-    partial_probs = rep(NA, length(chain_sizes_big)),
-    partial_size_max = NA,
-    partial_size_max_error = 1e-5,
-    prior = FALSE,
-    likelihood = TRUE,
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd
-  )
-
-  # We just need the fit objects
-  suppressWarnings({
-    msg <- capture.output({
-      fit_small <- rstan::sampling(
-        stanmodels$nbbp_homogenous,
-        sdat_small,
-        chains = 0
-      )
-      fit_big <- rstan::sampling(
-        stanmodels$nbbp_homogenous,
-        sdat_big,
-        chains = 0
-      )
-    })
-  })
-
-  lnl_small <- sum(
-    log(
-      nbbp::dnbbp(chain_sizes_small, par_small[1], par_small[2])
-    )
-  )
-
-  lnl_big <- sum(
-    log(
-      nbbp::dnbbp(chain_sizes_big, par_big[1], par_big[2])
-    )
-  )
-
-  testthat::expect_equal(
-    rstan::log_prob(
-      fit_small,
+    par_small <- .convert_stan_par(
       uncon_par_small,
-      adjust_transform = FALSE
-    ),
-    lnl_small,
-    tolerance = 1e-6
-  )
-
-  testthat::expect_equal(
-    rstan::log_prob(
-      fit_big,
+      r_geq_1 = FALSE,
+      to_stan = FALSE
+    )
+    par_big <- .convert_stan_par(
       uncon_par_big,
-      adjust_transform = FALSE
-    ),
-    lnl_big,
-    tolerance = 1e-6
-  )
+      r_geq_1 = FALSE,
+      to_stan = FALSE
+    )
+
+    sdat_small <- .stan_data_nbbp_homogenous(
+      all_outbreaks = chain_sizes_small,
+      censor_geq = rep(NA, length(chain_sizes_small)),
+      condition_geq = rep(NA, length(chain_sizes_small)),
+      partial_geq = rep(NA, length(chain_sizes_small)),
+      partial_probs = rep(NA, length(chain_sizes_small)),
+      partial_size_max = NA,
+      partial_size_max_error = 1e-5,
+      prior = FALSE,
+      likelihood = TRUE,
+      shape_r_eff = nbbp::default_res,
+      rate_r_eff = nbbp::default_res,
+      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+    )
+
+    sdat_big <- .stan_data_nbbp_homogenous(
+      all_outbreaks = chain_sizes_big,
+      censor_geq = rep(NA, length(chain_sizes_big)),
+      condition_geq = rep(NA, length(chain_sizes_big)),
+      partial_geq = rep(NA, length(chain_sizes_big)),
+      partial_probs = rep(NA, length(chain_sizes_big)),
+      partial_size_max = NA,
+      partial_size_max_error = 1e-5,
+      prior = FALSE,
+      likelihood = TRUE,
+      shape_r_eff = nbbp::default_res,
+      rate_r_eff = nbbp::default_res,
+      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+    )
+
+    # We just need the fit objects
+    suppressWarnings({
+      msg <- capture.output({
+        fit_small <- rstan::sampling(
+          stanmodels$nbbp_homogenous,
+          sdat_small,
+          chains = 0
+        )
+        fit_big <- rstan::sampling(
+          stanmodels$nbbp_homogenous,
+          sdat_big,
+          chains = 0
+        )
+      })
+    })
+
+    lnl_small <- sum(
+      log(
+        nbbp::dnbbp(chain_sizes_small, par_small[1], par_small[2])
+      )
+    )
+
+    lnl_big <- sum(
+      log(
+        nbbp::dnbbp(chain_sizes_big, par_big[1], par_big[2])
+      )
+    )
+
+    testthat::expect_equal(
+      rstan::log_prob(
+        fit_small,
+        uncon_par_small,
+        adjust_transform = FALSE
+      ),
+      lnl_small,
+      tolerance = 1e-6
+    )
+
+    testthat::expect_equal(
+      rstan::log_prob(
+        fit_big,
+        uncon_par_big,
+        adjust_transform = FALSE
+      ),
+      lnl_big,
+      tolerance = 1e-6
+    )
+  })
 })
 
 test_that("stan censored and size-conditioned log-likelihood agrees with nbbp", {
-  chain_sizes <- c(2, 3, 3, 5, 5, 10, Inf)
-  censor_sizes <- c(NA, NA, NA, NA, NA, 5, 50)
-  min_obs_sizes <- c(NA, 2, 2, NA, 3, NA, 5)
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    chain_sizes <- c(2, 3, 3, 5, 5, 10, Inf)
+    censor_sizes <- c(NA, NA, NA, NA, NA, 5, 50)
+    min_obs_sizes <- c(NA, 2, 2, NA, 3, NA, 5)
 
-  uncon_par <- c(0.421, -7.389)
-  par <- .convert_stan_par(uncon_par, r_geq_1 = FALSE, to_stan = FALSE)
+    uncon_par <- c(0.421, -7.389)
+    par <- .convert_stan_par(uncon_par, r_geq_1 = FALSE, to_stan = FALSE)
 
-  sdat <- .stan_data_nbbp_homogenous(
-    all_outbreaks = chain_sizes,
-    censor_geq = censor_sizes,
-    condition_geq = min_obs_sizes,
-    partial_geq = rep(NA, length(chain_sizes)),
-    partial_probs = rep(NA, length(chain_sizes)),
-    partial_size_max = NA,
-    partial_size_max_error = 1e-5,
-    prior = FALSE,
-    likelihood = TRUE,
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd
-  )
-
-  # Short chains guarantee warnings, we just need the fit objects
-  suppressWarnings({
-    msg <- capture.output({
-      fit <- rstan::sampling(stanmodels$nbbp_homogenous, sdat, chains = 0)
-    })
-  })
-
-  lnl_uncensored <- sum(
-    log(
-      nbbp::dnbbp(chain_sizes[is.na(censor_sizes)], par[1], par[2])
+    sdat <- .stan_data_nbbp_homogenous(
+      all_outbreaks = chain_sizes,
+      censor_geq = censor_sizes,
+      condition_geq = min_obs_sizes,
+      partial_geq = rep(NA, length(chain_sizes)),
+      partial_probs = rep(NA, length(chain_sizes)),
+      partial_size_max = NA,
+      partial_size_max_error = 1e-5,
+      prior = FALSE,
+      likelihood = TRUE,
+      shape_r_eff = nbbp::default_res,
+      rate_r_eff = nbbp::default_res,
+      sigma_inv_sqrt_dispersion = nbbp::default_sisd
     )
-  )
-  lnl_censored <- sum(
-    log(
-      sapply(censor_sizes[!is.na(censor_sizes)], function(size) {
-        1.0 -
-          sum(
-            nbbp::dnbbp(1:(size - 1), par[1], par[2])
-          )
+
+    # Short chains guarantee warnings, we just need the fit objects
+    suppressWarnings({
+      msg <- capture.output({
+        fit <- rstan::sampling(stanmodels$nbbp_homogenous, sdat, chains = 0)
       })
-    )
-  )
-  lnl_conditioning <- sum(
-    log(
-      sapply(min_obs_sizes[!is.na(min_obs_sizes)], function(size) {
-        1.0 -
-          sum(
-            nbbp::dnbbp(1:(size - 1), par[1], par[2])
-          )
-      })
-    )
-  )
-  lnl <- lnl_uncensored + lnl_censored - lnl_conditioning
-
-  testthat::expect_equal(
-    rstan::log_prob(
-      fit,
-      c(uncon_par),
-      adjust_transform = FALSE
-    ),
-    lnl,
-    tolerance = 1e-6
-  )
-})
-
-test_that("stan binomially-sampled agrees with nbbp for fixed truncation", {
-  chain_sizes <- c(1)
-  inc_obs_sizes <- c(1)
-  inc_obs_probs <- c(0.5)
-  min_obs_sizes <- c(1)
-
-  infty <- 1e6
-
-  par <- c(1, 1)
-  uncon_par <- .convert_stan_par(par, r_geq_1 = FALSE, to_stan = TRUE)
-
-  sdat <- .stan_data_nbbp_homogenous(
-    all_outbreaks = chain_sizes,
-    censor_geq = rep(NA, length(chain_sizes)),
-    condition_geq = min_obs_sizes,
-    partial_geq = inc_obs_sizes,
-    partial_probs = inc_obs_probs,
-    partial_size_max = infty,
-    partial_size_max_error = NA,
-    prior = FALSE,
-    likelihood = TRUE,
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd
-  )
-
-  # Short chains guarantee warnings, we just need the fit objects
-  suppressWarnings({
-    msg <- capture.output({
-      fit <- rstan::sampling(stanmodels$nbbp_homogenous, sdat, chains = 0)
     })
-  })
 
-  pr_nbbp <- dnbbp(1:infty, par[1], par[2])
-  pr_binom <- dbinom(1, 1:infty, 0.5)
-  pr_0 <- sum(dbinom(0, 1:infty, 0.5) * pr_nbbp)
-  lnl <- log(sum(pr_nbbp * pr_binom)) - log(1 - pr_0)
-
-  testthat::expect_equal(
-    rstan::log_prob(
-      fit,
-      c(uncon_par),
-      adjust_transform = FALSE
-    ),
-    lnl,
-    tolerance = 1e-8
-  )
-})
-
-test_that("stan binomially-sampled and size-conditioned log-likelihood agrees with nbbp", {
-  chain_sizes <- c(2, 3, 3, 5, 5, NA, NA, NA)
-  inc_obs_sizes <- c(NA, NA, NA, NA, NA, 5, 50, 50)
-  inc_obs_probs <- c(NA, NA, NA, NA, NA, 0.531, 0.531, 0.112)
-  min_obs_sizes <- c(NA, 2, 2, NA, NA, 1, 1, 1)
-
-  infty <- 1e6
-
-  uncon_par <- c(0.421, -7.389)
-  par <- .convert_stan_par(uncon_par, r_geq_1 = FALSE, to_stan = FALSE)
-
-  sdat <- .stan_data_nbbp_homogenous(
-    all_outbreaks = chain_sizes,
-    censor_geq = rep(NA, length(chain_sizes)),
-    condition_geq = min_obs_sizes,
-    partial_geq = inc_obs_sizes,
-    partial_probs = inc_obs_probs,
-    partial_size_max = NA,
-    partial_size_max_error = 1e-5,
-    prior = FALSE,
-    likelihood = TRUE,
-    shape_r_eff = nbbp::default_res,
-    rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd
-  )
-
-  # Short chains guarantee warnings, we just need the fit objects
-  suppressWarnings({
-    msg <- capture.output({
-      fit <- rstan::sampling(stanmodels$nbbp_homogenous, sdat, chains = 0)
-    })
-  })
-
-  lnl_uncensored <- sum(
-    log(
-      nbbp::dnbbp(chain_sizes[is.na(inc_obs_sizes)], par[1], par[2])
+    lnl_uncensored <- sum(
+      log(
+        nbbp::dnbbp(chain_sizes[is.na(censor_sizes)], par[1], par[2])
+      )
     )
-  )
-  lnl_conditioning <- sum(
-    log(
-      sapply(
-        min_obs_sizes[(!is.na(min_obs_sizes)) & (is.na(inc_obs_probs))],
-        function(size) {
+    lnl_censored <- sum(
+      log(
+        sapply(censor_sizes[!is.na(censor_sizes)], function(size) {
           1.0 -
             sum(
               nbbp::dnbbp(1:(size - 1), par[1], par[2])
             )
-        }
+        })
       )
     )
-  )
-  lnl_binomial <- sum(
-    log(
-      sapply(which(!is.na(inc_obs_sizes)), function(idx) {
-        sum(
-          nbbp::dnbbp(inc_obs_sizes[idx]:infty, par[1], par[2]) *
-            dbinom(
-              inc_obs_sizes[idx],
-              inc_obs_sizes[idx]:infty,
-              inc_obs_probs[idx]
+    lnl_conditioning <- sum(
+      log(
+        sapply(min_obs_sizes[!is.na(min_obs_sizes)], function(size) {
+          1.0 -
+            sum(
+              nbbp::dnbbp(1:(size - 1), par[1], par[2])
             )
-        )
-      })
+        })
+      )
     )
-  )
-  lnl_binomial_conditioning <- sum(
-    log(
-      sapply(inc_obs_probs[!is.na(inc_obs_probs)], function(prob) {
-        1.0 -
-          sum(
-            nbbp::dnbbp(1:infty, par[1], par[2]) *
-              dbinom(0, 1:infty, prob)
-          )
-      })
-    )
-  )
-  lnl <- lnl_uncensored +
-    lnl_binomial -
-    lnl_conditioning -
-    lnl_binomial_conditioning
+    lnl <- lnl_uncensored + lnl_censored - lnl_conditioning
 
-  testthat::expect_equal(
-    rstan::log_prob(
-      fit,
-      c(uncon_par),
-      adjust_transform = FALSE
-    ),
-    lnl,
-    tolerance = 1e-6
-  )
+    testthat::expect_equal(
+      rstan::log_prob(
+        fit,
+        c(uncon_par),
+        adjust_transform = FALSE
+      ),
+      lnl,
+      tolerance = 1e-6
+    )
+  })
+})
+
+test_that("stan binomially-sampled agrees with nbbp for fixed truncation", {
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    chain_sizes <- c(1)
+    inc_obs_sizes <- c(1)
+    inc_obs_probs <- c(0.5)
+    min_obs_sizes <- c(1)
+
+    infty <- 1e6
+
+    par <- c(1, 1)
+    uncon_par <- .convert_stan_par(par, r_geq_1 = FALSE, to_stan = TRUE)
+
+    sdat <- .stan_data_nbbp_homogenous(
+      all_outbreaks = chain_sizes,
+      censor_geq = rep(NA, length(chain_sizes)),
+      condition_geq = min_obs_sizes,
+      partial_geq = inc_obs_sizes,
+      partial_probs = inc_obs_probs,
+      partial_size_max = infty,
+      partial_size_max_error = NA,
+      prior = FALSE,
+      likelihood = TRUE,
+      shape_r_eff = nbbp::default_res,
+      rate_r_eff = nbbp::default_res,
+      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+    )
+
+    # Short chains guarantee warnings, we just need the fit objects
+    suppressWarnings({
+      msg <- capture.output({
+        fit <- rstan::sampling(stanmodels$nbbp_homogenous, sdat, chains = 0)
+      })
+    })
+
+    pr_nbbp <- dnbbp(1:infty, par[1], par[2])
+    pr_binom <- dbinom(1, 1:infty, 0.5)
+    pr_0 <- sum(dbinom(0, 1:infty, 0.5) * pr_nbbp)
+    lnl <- log(sum(pr_nbbp * pr_binom)) - log(1 - pr_0)
+
+    testthat::expect_equal(
+      rstan::log_prob(
+        fit,
+        c(uncon_par),
+        adjust_transform = FALSE
+      ),
+      lnl,
+      tolerance = 1e-8
+    )
+  })
+})
+
+test_that("stan binomially-sampled and size-conditioned log-likelihood agrees with nbbp", {
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    chain_sizes <- c(2, 3, 3, 5, 5, NA, NA, NA)
+    inc_obs_sizes <- c(NA, NA, NA, NA, NA, 5, 50, 50)
+    inc_obs_probs <- c(NA, NA, NA, NA, NA, 0.531, 0.531, 0.112)
+    min_obs_sizes <- c(NA, 2, 2, NA, NA, 1, 1, 1)
+
+    infty <- 1e6
+
+    uncon_par <- c(0.421, -7.389)
+    par <- .convert_stan_par(uncon_par, r_geq_1 = FALSE, to_stan = FALSE)
+
+    sdat <- .stan_data_nbbp_homogenous(
+      all_outbreaks = chain_sizes,
+      censor_geq = rep(NA, length(chain_sizes)),
+      condition_geq = min_obs_sizes,
+      partial_geq = inc_obs_sizes,
+      partial_probs = inc_obs_probs,
+      partial_size_max = NA,
+      partial_size_max_error = 1e-5,
+      prior = FALSE,
+      likelihood = TRUE,
+      shape_r_eff = nbbp::default_res,
+      rate_r_eff = nbbp::default_res,
+      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+    )
+
+    # Short chains guarantee warnings, we just need the fit objects
+    suppressWarnings({
+      msg <- capture.output({
+        fit <- rstan::sampling(stanmodels$nbbp_homogenous, sdat, chains = 0)
+      })
+    })
+
+    lnl_uncensored <- sum(
+      log(
+        nbbp::dnbbp(chain_sizes[is.na(inc_obs_sizes)], par[1], par[2])
+      )
+    )
+    lnl_conditioning <- sum(
+      log(
+        sapply(
+          min_obs_sizes[(!is.na(min_obs_sizes)) & (is.na(inc_obs_probs))],
+          function(size) {
+            1.0 -
+              sum(
+                nbbp::dnbbp(1:(size - 1), par[1], par[2])
+              )
+          }
+        )
+      )
+    )
+    lnl_binomial <- sum(
+      log(
+        sapply(which(!is.na(inc_obs_sizes)), function(idx) {
+          sum(
+            nbbp::dnbbp(inc_obs_sizes[idx]:infty, par[1], par[2]) *
+              dbinom(
+                inc_obs_sizes[idx],
+                inc_obs_sizes[idx]:infty,
+                inc_obs_probs[idx]
+              )
+          )
+        })
+      )
+    )
+    lnl_binomial_conditioning <- sum(
+      log(
+        sapply(inc_obs_probs[!is.na(inc_obs_probs)], function(prob) {
+          1.0 -
+            sum(
+              nbbp::dnbbp(1:infty, par[1], par[2]) *
+                dbinom(0, 1:infty, prob)
+            )
+        })
+      )
+    )
+    lnl <- lnl_uncensored +
+      lnl_binomial -
+      lnl_conditioning -
+      lnl_binomial_conditioning
+
+    testthat::expect_equal(
+      rstan::log_prob(
+        fit,
+        c(uncon_par),
+        adjust_transform = FALSE
+      ),
+      lnl,
+      tolerance = 1e-6
+    )
+  })
 })
 
 test_that("stan censored and nbbp agree on real data for many parameter values", {
@@ -527,15 +541,19 @@ test_that("stan censored and nbbp agree on real data for many parameter values",
 })
 
 test_that("Users can specify the minimum without error", {
-  chains <- c(rep(1, 7), rep(2, 3), 10)
-  expect_no_error(
-    fit_nbbp_homogenous_ml(chains, ci_method = "profile", seed = 1)
-  )
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    chains <- c(rep(1, 7), rep(2, 3), 10)
+    expect_no_error(
+      fit_nbbp_homogenous_ml(chains, ci_method = "profile", seed = 1)
+    )
+  })
 })
 
 test_that("Our warning about bad k trips", {
-  chains <- c(rep(1, 7), rep(2, 3))
-  expect_warning(
-    fit_nbbp_homogenous_ml(chains, ci_method = "profile", seed = 1)
-  )
+  withr::with_envvar(new = c("ENABLE_NBBP_MLE" = "yes"), {
+    chains <- c(rep(1, 7), rep(2, 3))
+    expect_warning(
+      fit_nbbp_homogenous_ml(chains, ci_method = "profile", seed = 1)
+    )
+  })
 })
