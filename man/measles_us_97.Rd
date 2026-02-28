@@ -44,7 +44,7 @@ fit_nbbp_homogenous_bayes(
 Blumberg S, Funk S, Pulliam JRC (2014). "Detecting differential transmissibilities that
 affect the size of self-Limited outbreaks." PLOS Pathogens 10(10): e1004452.
 
-Gay NJ, De Serres G, Farrington CP, Redd SB, J M (2004). "Assessment of the status of measles
+Gay NJ, De Serres G, Farrington CP, Redd SB (2004). "Assessment of the status of measles
 elimination from reported outbreaks: United States, 1997-1999." The Journal of Infectious
 Diseases 189 Suppl: S36-S42.
 
