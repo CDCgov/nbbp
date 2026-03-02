@@ -133,6 +133,18 @@ pnbbp <- Vectorize(.pnbbp)
 #' @rdname dnbbp
 #' @export
 rnbbp <- function(n, r, k, condition_on_extinction = FALSE, max_size = 1e6) {
+  if (length(n) > 1) {
+    n <- length(n)
+  }
+  counter <- function(x, r, k) {
+    c(r = r, k = k)
+  }
+  mapply(counter, x = 1:n, r = r, k = k)
+}
+
+#' Internal single R,k rnbbp
+#' @keywords internal
+.rnbbp <- function(n, r, k, condition_on_extinction, max_size) {
   .assert_r_realpos(r)
   n_subcrit <- n
   if (!condition_on_extinction && r >= 1.0) {
