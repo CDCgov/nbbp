@@ -85,13 +85,20 @@ dnbbp <- function(
     cond_probs <- ifelse(condition_on_extinction, exn_probs, 1.0)
   } else {
     helper <- function(x, r, k, condition_on_extinction) {
+      ep <- nbbp_ep(r, k)$prob
       return(list(
-        exn_prob = nbbp_ep(r, k),
-        cond_prob = ifelse(condition_on_extinction, exn_prob, 1.0)
+        exn_prob = ep,
+        cond_prob = ifelse(condition_on_extinction, ep, 1.0)
       ))
     }
     # Make sure extinction probabilities line up in R style
-    raw <- mapply(helper, x = x, r = r, k = k)
+    raw <- mapply(
+      helper,
+      x = x,
+      r = r,
+      k = k,
+      condition_on_extinction = condition_on_extinction
+    )
     exn_probs <- unlist(raw["exn_prob", ])
     cond_probs <- unlist(raw["cond_prob", ])
   }
@@ -112,11 +119,16 @@ dnbbp <- function(
     log(x * cond_prob)
 }
 
-#' @rdname dnbbp
-#' @export
-pnbbp <- function(q, r, k) {
+#' Internal object to be Vectorize()'d to produce pnbbp
+#' @keywords internal
+.pnbbp <- function(q, r, k) {
+  stopifnot(length(q) == 1, length(r) == 1, length(k) == 1)
   sum(dnbbp(1:q, r, k))
 }
+
+#' @rdname dnbbp
+#' @export
+pnbbp <- Vectorize(.pnbbp)
 
 #' @rdname dnbbp
 #' @export
