@@ -43,28 +43,73 @@ dnbbp <- function(
     k,
     condition_on_extinction = FALSE) {
   stopifnot(all(x >= 1))
-  mass <- exp(.dnbbp_subcrit(
+
+  cond_info <- .handle_conditioning(
     x = x,
     r = r,
     k = k,
     condition_on_extinction = condition_on_extinction
+  )
+  mass <- exp(.dnbbp_subcrit(
+    x = x,
+    r = r,
+    k = k,
+    cond_prob = cond_info$cond_probs
   ))
   if (!condition_on_extinction) {
-    mass[x == Inf] <- 1.0 - nbbp_ep(r, k)$prob
+    mass[x == Inf] <- (1.0 - cond_info$exn_probs)[x == Inf]
   }
   mass
 }
 
-#' Optionally-conditioned log-scale PMF of the NBBP for completely-observed finite chain sizes
+#' Vectorization of extinction and conditioning probabilities for use in dnbbp
 #'
-#' See dnbbp
+#' Accounts for vector recycling when any or x, r, and k are not scalars
+#' while maintaining speed when only x is a vector to keep rnbbp efficient.
+#'
+#' @returns
 #'
 #' @keywords internal
-.dnbbp_subcrit <- function(x, r, k, condition_on_extinction) {
+.handle_conditioning <- function(x, r, k, condition_on_extinction) {
+  if (length(r) == 1 && length(k) == 1) {
+    exn_probs <- rep(nbbp_ep(r, k)$prob, length(x))
+    if (length(condition_on_extinction) == 1) {
+      condition_on_extinction <- rep(condition_on_extinction, length(x))
+    }
+    stopifnot(
+      "Length of `condition_on_extinction` does not match length of `x`" = length(
+        condition_on_extinction
+      ) ==
+        length(x)
+    )
+    cond_probs <- ifelse(condition_on_extinction, exn_probs, 1.0)
+  } else {
+    helper <- function(x, r, k, condition_on_extinction) {
+      return(list(
+        exn_prob = nbbp_ep(r, k),
+        cond_prob = ifelse(condition_on_extinction, exn_prob, 1.0)
+      ))
+    }
+    # Make sure extinction probabilities line up in R style
+    raw <- mapply(helper, x = x, r = r, k = k)
+    exn_probs <- unlist(raw["exn_prob", ])
+    cond_probs <- unlist(raw["cond_prob", ])
+  }
+  return(list(exn_probs = exn_probs, cond_probs = cond_probs))
+}
+
+
+#' Optionally-conditioned log-scale PMF of the NBBP for completely-observed finite chain sizes
+#'
+#' Arguments as dnbbp except
+#' @param cond_prob the pre-computed conditioning probability to be used in the density;
+#' 1.0 if not conditioning on extinction, otherwise Pr(extinct | r, k).
+#'
+#' @keywords internal
+.dnbbp_subcrit <- function(x, r, k, cond_prob) {
   .assert_r_realpos(r)
-  prob_exn <- ifelse(condition_on_extinction, nbbp_ep(r, k)$prob, 1.0)
   stats::dnbinom(x - 1, mu = r * x, size = k * x, log = TRUE) -
-    log(x * prob_exn)
+    log(x * cond_prob)
 }
 
 #' @rdname dnbbp
