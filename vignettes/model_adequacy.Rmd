@@ -70,11 +70,11 @@ set.seed(42)
 
 nchains <- length(pneumonic_plague_inf)
 npred <- 100
-posterior_predictive <- data.frame(
-  r = unlist(rstan::extract(fit_inf, "r_eff")),
-  k = unlist(rstan::extract(fit_inf, "dispersion")),
-  index = 1:10000
-) |>
+
+posterior_predictive <- rstan::extract(fit_inf, pars = c("r_eff", "dispersion")) |>
+  as.data.frame() |>
+  dplyr::rename(r = r_eff, k = dispersion) |>
+  dplyr::mutate(index = row_number()) |>
   filter(index %in% sample.int(10000, npred)) |>
   mutate(
     chain_size = purrr::map2(
@@ -333,11 +333,11 @@ We can get the pooled model's prediction on what differences would look like bet
 ```{r}
 nchains <- length(measles_pooled)
 npred <- 100
-pooled_predictive <- data.frame(
-  r = unlist(rstan::extract(pooled, "r_eff")),
-  k = unlist(rstan::extract(pooled, "dispersion")),
-  index = 1:10000
-) |>
+
+pooled_predictive <- rstan::extract(pooled, pars = c("r_eff", "dispersion")) |>
+  as.data.frame() |>
+  dplyr::rename(r = r_eff, k = dispersion) |>
+  dplyr::mutate(index = row_number()) |>
   filter(index %in% sample.int(10000, npred)) |>
   mutate(
     chain_size = purrr::map2(
