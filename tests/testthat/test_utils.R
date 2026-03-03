@@ -36,7 +36,19 @@ test_that(".get_partial_ub works as expected", {
   )
   expect_equal(
     ub,
-    qnbinom(prob * alpha, max_size + 1, prob, lower.tail = FALSE)
+    max_size + qnbinom(prob * alpha, max_size + 1, prob, lower.tail = FALSE)
+  )
+
+  prob <- 0.95
+  ub <- .get_partial_ub(
+    obs_sizes = 1:max_size,
+    obs_probs = rep(prob, 10),
+    size_max = NA,
+    error_max = alpha
+  )
+  expect_equal(
+    ub,
+    max_size + qnbinom(prob * alpha, max_size + 1, prob, lower.tail = FALSE)
   )
 })
 
