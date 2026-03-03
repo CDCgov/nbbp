@@ -95,7 +95,6 @@ We can see even greater uncertainty about $k$, which is typical in practice with
 
 While `rstan` provides some basic plotting capabilities, this is not the only way to do so.
 Here we extract and plot things ourselves directly with ggplot, though we could also use the `bayesplot` package which has many nice visualizations.
-Plots show us
 ```{r}
 par_df <- rstan::extract(fit, pars = c("r_eff", "dispersion", "p_0", "exn_prob")) |>
   as.data.frame()
