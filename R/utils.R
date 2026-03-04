@@ -91,7 +91,8 @@ table_add_1d <- function(t1, t2, keep_zeros = FALSE) {
         1 - obs_probs[i] * error_max,
         size = obs_sizes[i] + 1,
         prob = obs_probs[i]
-      )
+      ) +
+        obs_sizes[i]
     })
     size_max <- max(per_chain_max)
   }
