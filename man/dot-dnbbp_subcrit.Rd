@@ -4,9 +4,13 @@
 \alias{.dnbbp_subcrit}
 \title{Optionally-conditioned log-scale PMF of the NBBP for completely-observed finite chain sizes}
 \usage{
-.dnbbp_subcrit(x, r, k, condition_on_extinction)
+.dnbbp_subcrit(x, r, k, cond_prob)
+}
+\arguments{
+\item{cond_prob}{the pre-computed conditioning probability to be used in the density;
+1.0 if not conditioning on extinction, otherwise Pr(extinct | r, k).}
 }
 \description{
-See dnbbp
+Arguments as dnbbp except
 }
 \keyword{internal}
