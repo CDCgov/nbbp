@@ -1,12 +1,23 @@
 #' Chain size data for borealpox
 #'
-#' Per Wikipedia (accessed September 2024), there have been 7 reported single cases of borealpox.
+#' Mooring et al. (2025) report on 6 singleton cases of borealpox from 2020 through 2023 and
+#' Springer et al. (2017) report on the first known case of borealpox, for a total of 7
+#' observed cases, all of which have been singletons (i.e., no epidemiologic links between
+#' borealpox cases have ever been identified).
 #'
 #' @docType data
 #' @usage data(borealpox)
 #' @format Vector of all chain sizes.
 #' @keywords datasets
-#' @source https://en.wikipedia.org/wiki/Borealpox_virus
+#' @references
+#' Mooring EQ, Rogers J, Whitehill F, Werle Z, Gigante CM, et al. (2025) "Six Cases of Borealpox
+#' and Evidence of a Zoonotic Source-Alaska, 2020-2023." Clinical Infectious Diseases
+#' ciaf497. Epub ahead of print.
+#'
+#' Springer YP, Hsu CH, Werle ZR, Olson LE, Cooper MP, et al. (2017) "Novel Orthopoxvirus
+#' Infection in an Alaska Resident." Clinical Infectious Diseases 64(12):1737-1741.
+#'
+#' @source https://doi.org/10.1093/cid/ciaf497
 #'
 #' @examples
 #' \dontrun{
@@ -71,7 +82,7 @@
 #' Blumberg S, Funk S, Pulliam JRC (2014). "Detecting differential transmissibilities that
 #' affect the size of self-Limited outbreaks." PLOS Pathogens 10(10): e1004452.
 #'
-#' Gay NJ, De Serres G, Farrington CP, Redd SB, J M (2004). "Assessment of the status of measles
+#' Gay NJ, De Serres G, Farrington CP, Redd SB (2004). "Assessment of the status of measles
 #' elimination from reported outbreaks: United States, 1997-1999." The Journal of Infectious
 #' Diseases 189 Suppl: S36-S42.
 #'

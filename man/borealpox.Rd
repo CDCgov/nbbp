@@ -8,13 +8,16 @@
 Vector of all chain sizes.
 }
 \source{
-https://en.wikipedia.org/wiki/Borealpox_virus
+https://doi.org/10.1093/cid/ciaf497
 }
 \usage{
 data(borealpox)
 }
 \description{
-Per Wikipedia (accessed September 2024), there have been 7 reported single cases of borealpox.
+Mooring et al. (2025) report on 6 singleton cases of borealpox from 2020 through 2023 and
+Springer et al. (2017) report on the first known case of borealpox, for a total of 7
+observed cases, all of which have been singletons (i.e., no epidemiologic links between
+borealpox cases have ever been identified).
 }
 \examples{
 \dontrun{
@@ -22,5 +25,13 @@ data(borealpox)
 model <- compile_nbbp_homogenous()
 fit_nbbp_homogenous_bayes(borealpox, model)
 }
+}
+\references{
+Mooring EQ, Rogers J, Whitehill F, Werle Z, Gigante CM, et al. (2025) "Six Cases of Borealpox
+and Evidence of a Zoonotic Source-Alaska, 2020-2023." Clinical Infectious Diseases
+ciaf497. Epub ahead of print.
+
+Springer YP, Hsu CH, Werle ZR, Olson LE, Cooper MP, et al. (2017) "Novel Orthopoxvirus
+Infection in an Alaska Resident." Clinical Infectious Diseases 64(12):1737-1741.
 }
 \keyword{datasets}

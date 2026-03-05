@@ -1,5 +1,4 @@
-# https://en.wikipedia.org/wiki/Borealpox_virus, accessed 2024-09-25
-# "As of February 2024, there are seven reported cases of illness"
+# Text of https://doi.org/10.1093/cid/cix219 and https://doi.org/10.1093/cid/ciaf497
 borealpox <- rep(1, 7)
 
 # Table 1 of https://doi.org/10.1016/j.jtbi.2011.10.039
