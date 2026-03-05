@@ -275,3 +275,37 @@ test_that("rnbbp works", {
     })
   )
 })
+
+test_that("rnbbp produces what we expect when recycling parameters", {
+  withr::with_seed(42, {
+    sizes_oneoff <- .rnbbp(10, 0.3, 0.2, FALSE, 1e6)
+  })
+  withr::with_seed(42, {
+    sizes <- rnbbp(10, 0.3, 0.2, FALSE, 1e6)
+  })
+  expect_equal(sizes, sizes_oneoff)
+
+  withr::with_seed(42, {
+    sizes_multi_oneoff <- c(
+      .rnbbp(4, 0.3, 0.1, TRUE, 1e6),
+      .rnbbp(3, 0.2, 1.0, FALSE, 1e6),
+      .rnbbp(3, 0.3, 10.0, TRUE, 1e6)
+    )
+  })
+  withr::with_seed(42, {
+    # Internal mapply usage means we get more errors the more length
+    # mismatches we have in our inputs, need to soak both up
+    expect_warning({
+      expect_warning({
+        sizes_multi <- rnbbp(
+          10,
+          c(0.3, 0.2),
+          c(0.1, 1.0, 10.0),
+          c(TRUE, FALSE),
+          1e6
+        )
+      })
+    })
+  })
+  expect_equal(sizes_multi, sizes_multi_oneoff)
+})

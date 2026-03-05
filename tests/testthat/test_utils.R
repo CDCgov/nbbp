@@ -73,3 +73,47 @@ test_that(".get_partial_ub complains about bad choices", {
     })
   )
 })
+
+test_that(".rng_param_recycler handles most cases", {
+  expect_equal(
+    .rng_param_recycler(n = 10, a = 1, b = 2),
+    list(list(a = 1, b = 2, n = 10))
+  )
+
+  expect_equal(
+    .rng_param_recycler(n = 10:19, a = 1, b = 2),
+    list(list(a = 1, b = 2, n = 10))
+  )
+
+  expect_warning({
+    recyc_nozero <- .rng_param_recycler(n = 12, a = 1:2, b = 1:5)
+  })
+  expect_equal(
+    recyc_nozero,
+    list(
+      list(a = 1, b = 1, n = 3),
+      list(a = 2, b = 2, n = 3),
+      list(a = 1, b = 3, n = 2),
+      list(a = 2, b = 4, n = 2),
+      list(a = 1, b = 5, n = 2)
+    )
+  )
+
+  expect_warning({
+    recyc_nozero <- .rng_param_recycler(n = 3, a = 1:2, b = 1:5)
+  })
+  expect_equal(
+    recyc_nozero,
+    list(
+      list(a = 1, b = 1, n = 1),
+      list(a = 2, b = 2, n = 1),
+      list(a = 1, b = 3, n = 1),
+      list(a = 2, b = 4, n = 0),
+      list(a = 1, b = 5, n = 0)
+    )
+  )
+
+  expect_no_warning({
+    tmp <- .rng_param_recycler(n = 3, a = 1:2, b = 1:4)
+  })
+})

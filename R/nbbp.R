@@ -133,19 +133,33 @@ pnbbp <- Vectorize(.pnbbp)
 #' @rdname dnbbp
 #' @export
 rnbbp <- function(n, r, k, condition_on_extinction = FALSE, max_size = 1e6) {
-  if (length(n) > 1) {
-    n <- length(n)
-  }
-  counter <- function(x, r, k) {
-    c(r = r, k = k)
-  }
-  mapply(counter, x = 1:n, r = r, k = k)
+  par_combos <- .rng_param_recycler(
+    n = n,
+    r = r,
+    k = k,
+    condition_on_extinction = condition_on_extinction,
+    max_size = max_size
+  )
+
+  samples <- lapply(par_combos, function(par) {
+    do.call(.rnbbp, par)
+  }) |>
+    unlist()
+
+  return(samples)
 }
 
 #' Internal single R,k rnbbp
 #' @keywords internal
 .rnbbp <- function(n, r, k, condition_on_extinction, max_size) {
   .assert_r_realpos(r)
+  stopifnot(
+    length(n) == 1,
+    length(r) == 1,
+    length(k) == 1,
+    length(condition_on_extinction) == 1,
+    length(max_size) == 1
+  )
   n_subcrit <- n
   if (!condition_on_extinction && r >= 1.0) {
     exn_prob <- nbbp_ep(r, k)$prob
