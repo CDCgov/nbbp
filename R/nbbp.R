@@ -67,7 +67,8 @@ dnbbp <- function(
 #' Accounts for vector recycling when any or x, r, and k are not scalars
 #' while maintaining speed when only x is a vector to keep rnbbp efficient.
 #'
-#' @returns
+#' @returns a conditioning probability to pass to .dnbbp_subcrit for each
+#' combination of r, k, and condition_on_extinction
 #'
 #' @keywords internal
 .handle_conditioning <- function(x, r, k, condition_on_extinction) {
