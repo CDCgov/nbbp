@@ -13,7 +13,7 @@
 #' Mooring EQ, Rogers J, Whitehill F, Werle Z, Gigante CM, et al. (2025) "Six Cases of Borealpox
 #' and Evidence of a Zoonotic Source-Alaska, 2020-2023." Clinical Infectious Diseases
 #' ciaf497. Epub ahead of print.
-#' 
+#'
 #' Springer YP, Hsu CH, Werle ZR, Olson LE, Cooper MP, et al. (2017) "Novel Orthopoxvirus
 #' Infection in an Alaska Resident." Clinical Infectious Diseases 64(12):1737-1741.
 #'
