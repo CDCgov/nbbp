@@ -1,4 +1,4 @@
-# Text of https://doi.org/10.1093/cid/cix219 and https://doi.org/10.1093/cid/ciaf497 
+# Text of https://doi.org/10.1093/cid/cix219 and https://doi.org/10.1093/cid/ciaf497
 borealpox <- rep(1, 7)
 
 # Table 1 of https://doi.org/10.1016/j.jtbi.2011.10.039
