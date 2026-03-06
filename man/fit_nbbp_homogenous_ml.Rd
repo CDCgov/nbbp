@@ -64,10 +64,10 @@ sample.int(.Machine$integer.max, 1), as in rstan::optimizing.}
 \value{
 A list the same as \link[rstan]{optimizing} with the following additional components.
 $ci: named matrix containing the confidence intervals at the specified width for
-r_eff and the dispersion parameter.
+r_eff and the concentration parameter.
 $ci_method: character specifying whether the CI was from the "parametric_bootstrap" or
 the "likelihood_profile" approach.
-$convergence: named matrix containing min and max values for r_eff, the dispersion parameter,
+$convergence: named matrix containing min and max values for r_eff, the concentration parameter,
 and the log-likelihood
 }
 \description{
@@ -81,7 +81,7 @@ initialization is used.
 Optimization will be attempted at least \code{run_reps} times, with the reported parameters taken
 from the replicate with the highest log-likelihood.
 Run-to-run variation is reported as the range of values of the log-likelihood, r_eff, and
-dispersion.
+concentration.
 If issues are encountered in optimizing, up to \code{max_tries} attempts will be made to obtain
 \code{run_reps} successful replicates. Results will be returned even if no replicate ran
 without incident. See \link[rstan]{optimizing} for more on the provided \code{return_code}.

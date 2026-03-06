@@ -71,9 +71,9 @@ set.seed(42)
 nchains <- length(pneumonic_plague_inf)
 npred <- 100
 
-posterior_predictive <- rstan::extract(fit_inf, pars = c("r_eff", "dispersion")) |>
+posterior_predictive <- rstan::extract(fit_inf, pars = c("r_eff", "concentration")) |>
   as.data.frame() |>
-  dplyr::rename(r = r_eff, k = dispersion) |>
+  dplyr::rename(r = r_eff, k = concentration) |>
   dplyr::mutate(index = row_number()) |>
   filter(index %in% sample.int(10000, npred)) |>
   mutate(
@@ -239,7 +239,7 @@ pred_cov |>
   geom_vline(xintercept = obs_cov, col = "red", lwd = 1.5)
 ```
 
-Here we see that our model predicts rather higher coefficients of variation, meaning it expects more dispersion relative to the mean.
+Here we see that our model predicts rather higher coefficients of variation, meaning it expects more concentration relative to the mean.
 This seems to suggest that the observed chain sizes are less overdispersed than our model predicted, possibly implying that we have somewhat under-estimated $k$.
 Given everything else we have seen, this does not mean we should immediately throw out our model entirely; all models are wrong, after all.
 It can, however, provide helpful context knowing how to interpret its predictions.
@@ -334,9 +334,9 @@ We can get the pooled model's prediction on what differences would look like bet
 nchains <- length(measles_pooled)
 npred <- 100
 
-pooled_predictive <- rstan::extract(pooled, pars = c("r_eff", "dispersion")) |>
+pooled_predictive <- rstan::extract(pooled, pars = c("r_eff", "concentration")) |>
   as.data.frame() |>
-  dplyr::rename(r = r_eff, k = dispersion) |>
+  dplyr::rename(r = r_eff, k = concentration) |>
   dplyr::mutate(index = row_number()) |>
   filter(index %in% sample.int(10000, npred)) |>
   mutate(

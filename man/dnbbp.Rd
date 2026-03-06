@@ -17,7 +17,7 @@ rnbbp(n, r, k, condition_on_extinction = FALSE, max_size = 1e+06)
 
 \item{r}{effective reproduction number}
 
-\item{k}{dispersion parameter}
+\item{k}{concentration parameter}
 
 \item{condition_on_extinction}{logical, should we condition_on_extinction the process on
 extinction (TRUE) or not (FALSE)}

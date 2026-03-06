@@ -2,7 +2,7 @@
 
 ## Overview
 
-`nbbp` is an R package for inferring the effective reproduction number and dispersion parameter from stuttering chains.
+`nbbp` is an R package for inferring the effective reproduction number and concentration parameter from stuttering chains.
 
 ## Getting started
 

@@ -8,7 +8,7 @@ nb_param_convert(size = NULL, prob = NULL, mu = NULL)
 }
 \arguments{
 \item{size}{either the number of samples (probability-size
-parameterization) or the dispersion parameter (mean-dispersion
+parameterization) or the concentration parameter (mean-concentration
 parameterization)}
 
 \item{prob}{probability of success in each trial}
@@ -23,8 +23,8 @@ use with stats::rnbinom and related functions.
 Negative binomial parameterization conversion
 }
 \details{
-Converts between the mean-dispersion parameterization and the
+Converts between the mean-concentration parameterization and the
 probability-size parameterization of the Negative Binomial.
-Supply either prob and size to get mu (mean) and size (dispersion), or
+Supply either prob and size to get mu (mean) and size (concentration), or
 mu and size to get prob and size.
 }

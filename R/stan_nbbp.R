@@ -6,8 +6,8 @@
 #' In particular, we fit a Bayesian model in rstan, assuming all cases are observed.
 #' The variables recorded in the stan fit object are (ignoring stan's ordering):
 #' 1. `r_eff`, the effective reproduction number R;
-#' 2. `dispersion`, k, the parameter controlling (over)dispersion;
-#' 3. `inv_sqrt_dispersion`, 1 / sqrt(k);
+#' 2. `concentration`, k, the concentration parameter;
+#' 3. `inv_sqrt_concentration`, 1 / sqrt(k);
 #' 4. `exn_prob` the probability that the chain goes extinct for this R and k pair;
 #' 5. `p_0` the probability that one individual has 0 offspring for this R and k pair.
 #'
@@ -37,7 +37,7 @@
 #' rescaling the CDF such that it does not exceed 1 in the range it needs to be evaluated.
 #'
 #' We let r_eff ~ Gamma(shape = shape_r_eff, rate = rate_r_eff), and
-#' 1/sqrt(dispersion) ~ HalfNormal(sigma = sigma_inv_sqrt_dispersion).
+#' 1/sqrt(concentration) ~ HalfNormal(sigma = sigma_inv_sqrt_concentration).
 #' For more on the priors and their default values see `vignette("default_priors")`.
 #'
 #' @param all_outbreaks vector containing the size of each outbreak, including the index case
@@ -57,7 +57,7 @@
 #' much smaller than, this value, as discussed in the "Implementation details" vignette.
 #' @param shape_r_eff shape parameter of Gamma prior on r_eff.
 #' @param rate_r_eff rate parameter of Gamma prior on r_eff.
-#' @param sigma_inv_sqrt_dispersion scale of HalfNormal prior on 1 / sqrt(dispersion).
+#' @param sigma_inv_sqrt_concentration scale of HalfNormal prior on 1 / sqrt(concentration).
 #' @param iter number of iterations for rstan::sampling, default of 5000 intends to be conservative.
 #' @param control list for rstan::sampling, default attempts to set adapt_delta conservatively.
 #' @param ... further values past to rstan::sampling.
@@ -74,7 +74,7 @@ fit_nbbp_homogenous_bayes <- function(
     partial_size_max_error = 1e-5,
     shape_r_eff = nbbp::default_res,
     rate_r_eff = nbbp::default_res,
-    sigma_inv_sqrt_dispersion = nbbp::default_sisd,
+    sigma_inv_sqrt_concentration = nbbp::default_sisc,
     iter = 5000,
     control = list(adapt_delta = 0.9),
     ...) {
@@ -88,7 +88,7 @@ fit_nbbp_homogenous_bayes <- function(
     partial_size_max_error = partial_size_max_error,
     shape_r_eff = shape_r_eff,
     rate_r_eff = rate_r_eff,
-    sigma_inv_sqrt_dispersion = sigma_inv_sqrt_dispersion,
+    sigma_inv_sqrt_concentration = sigma_inv_sqrt_concentration,
     prior = TRUE,
     likelihood = TRUE
   )
@@ -113,7 +113,7 @@ fit_nbbp_homogenous_bayes <- function(
 #' Optimization will be attempted at least `run_reps` times, with the reported parameters taken
 #' from the replicate with the highest log-likelihood.
 #' Run-to-run variation is reported as the range of values of the log-likelihood, r_eff, and
-#' dispersion.
+#' concentration.
 #' If issues are encountered in optimizing, up to `max_tries` attempts will be made to obtain
 #' `run_reps` successful replicates. Results will be returned even if no replicate ran
 #' without incident. See \link[rstan]{optimizing} for more on the provided `return_code`.
@@ -160,10 +160,10 @@ fit_nbbp_homogenous_bayes <- function(
 #' @return
 #' A list the same as \link[rstan]{optimizing} with the following additional components.
 #' $ci: named matrix containing the confidence intervals at the specified width for
-#' r_eff and the dispersion parameter.
+#' r_eff and the concentration parameter.
 #' $ci_method: character specifying whether the CI was from the "parametric_bootstrap" or
 #' the "likelihood_profile" approach.
-#' $convergence: named matrix containing min and max values for r_eff, the dispersion parameter,
+#' $convergence: named matrix containing min and max values for r_eff, the concentration parameter,
 #' and the log-likelihood
 #' @export
 fit_nbbp_homogenous_ml <- function(
@@ -280,7 +280,7 @@ fit_nbbp_homogenous_ml <- function(
     partial_size_max_error = partial_size_max_error,
     shape_r_eff = 0.0,
     rate_r_eff = 0.0,
-    sigma_inv_sqrt_dispersion = 0.0,
+    sigma_inv_sqrt_concentration = 0.0,
     prior = FALSE,
     likelihood = TRUE
   )
@@ -319,7 +319,7 @@ fit_nbbp_homogenous_ml <- function(
     return(c(
       log_likelihood = fit$value,
       fit$par["r_eff"],
-      fit$par["dispersion"]
+      fit$par["concentration"]
     ))
   })
   fit <- fits[[which.max(pars["log_likelihood", ])]]
@@ -328,7 +328,7 @@ fit_nbbp_homogenous_ml <- function(
     m <- t(apply(pars, 1, range))
   }
   colnames(m) <- c("min", "max")
-  row.names(m) <- c("log_likelihood", "r_eff", "dispersion")
+  row.names(m) <- c("log_likelihood", "r_eff", "concentration")
   fit$convergence <- m
   return(fit)
 }
@@ -356,7 +356,7 @@ fit_nbbp_homogenous_ml <- function(
 
   lnl_cutoff <- fit$value - 2 * stats::qchisq(1 - ci_alpha, 1)
   point_r <- fit$par["r_eff"]
-  point_k <- fit$par["dispersion"]
+  point_k <- fit$par["concentration"]
 
   sdat <- .stan_data_nbbp_homogenous(
     all_outbreaks = all_outbreaks,
@@ -368,7 +368,7 @@ fit_nbbp_homogenous_ml <- function(
     partial_size_max_error = partial_size_max_error,
     shape_r_eff = 0.0,
     rate_r_eff = 0.0,
-    sigma_inv_sqrt_dispersion = 0.0,
+    sigma_inv_sqrt_concentration = 0.0,
     prior = FALSE,
     likelihood = TRUE
   )
@@ -428,7 +428,7 @@ fit_nbbp_homogenous_ml <- function(
   )
 
   m <- matrix(c(r_low, r_high, k_low, k_high), 2, 2, byrow = TRUE)
-  row.names(m) <- c("r_eff", "dispersion")
+  row.names(m) <- c("r_eff", "concentration")
   colnames(m) <- paste0(
     round(c(q_low, q_high) * 100, 4),
     "%"
@@ -466,14 +466,14 @@ fit_nbbp_homogenous_ml <- function(
     all_boot_sizes <- nbbp::rnbbp(
       n_obs * nboot,
       fit$par["r_eff"],
-      fit$par["dispersion"]
+      fit$par["concentration"]
     )
   } else {
     withr::with_seed(seed, {
       all_boot_sizes <- nbbp::rnbbp(
         n_obs * nboot,
         fit$par["r_eff"],
-        fit$par["dispersion"]
+        fit$par["concentration"]
       )
     })
   }
@@ -497,21 +497,21 @@ fit_nbbp_homogenous_ml <- function(
 
   boot <- sapply(boot_fits, function(bf) {
     return(c(
-      bf$par[c("r_eff", "dispersion")],
+      bf$par[c("r_eff", "concentration")],
       bad_opt = bf$return_code != 0
     ))
   })
 
   r <- unname(fit$par["r_eff"])
-  k <- unname(fit$par["dispersion"])
+  k <- unname(fit$par["concentration"])
 
   m <- matrix(
     unname(
       c(
         r - unname(stats::quantile(r - boot["r_eff", ], q_high)),
         r - unname(stats::quantile(r - boot["r_eff", ], q_low)),
-        k - unname(stats::quantile(k - boot["dispersion", ], q_high)),
-        k - unname(stats::quantile(k - boot["dispersion", ], q_low))
+        k - unname(stats::quantile(k - boot["concentration", ], q_high)),
+        k - unname(stats::quantile(k - boot["concentration", ], q_low))
       ),
     ),
     2,
@@ -519,7 +519,7 @@ fit_nbbp_homogenous_ml <- function(
     byrow = TRUE
   )
 
-  row.names(m) <- c("r_eff", "dispersion")
+  row.names(m) <- c("r_eff", "concentration")
   colnames(m) <- paste0(
     round(c(q_low, q_high) * 100, 4),
     "%"
@@ -545,7 +545,7 @@ fit_nbbp_homogenous_ml <- function(
     likelihood,
     shape_r_eff,
     rate_r_eff,
-    sigma_inv_sqrt_dispersion) {
+    sigma_inv_sqrt_concentration) {
   if (!isTRUE(prior)) {
     .stop_if_not_mle_enabled()
   }
@@ -571,7 +571,7 @@ fit_nbbp_homogenous_ml <- function(
       use_likelihood = as.integer(likelihood),
       shape_r_eff = shape_r_eff,
       rate_r_eff = rate_r_eff,
-      sigma_inv_sqrt_dispersion = sigma_inv_sqrt_dispersion
+      sigma_inv_sqrt_concentration = sigma_inv_sqrt_concentration
     ),
     nonpartial_info,
     partial_info
@@ -922,7 +922,7 @@ compute_likelihood_surface <- function(
       partial_size_max_error = partial_size_max_error,
       shape_r_eff = 0.0,
       rate_r_eff = 0.0,
-      sigma_inv_sqrt_dispersion = 0.0,
+      sigma_inv_sqrt_concentration = 0.0,
       prior = FALSE,
       likelihood = TRUE
     )

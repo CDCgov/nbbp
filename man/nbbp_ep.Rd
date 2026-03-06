@@ -9,7 +9,7 @@ nbbp_ep(r, k, tol = .Machine$double.eps)
 \arguments{
 \item{r}{effective reproduction number}
 
-\item{k}{dispersion parameter: when <1, overdispersed}
+\item{k}{concentration parameter: when <1, overdispersed}
 
 \item{tol}{tolerance passed to numerical solver}
 }
