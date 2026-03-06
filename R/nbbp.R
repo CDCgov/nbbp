@@ -198,7 +198,8 @@ rnbbp <- function(n, r, k, condition_on_extinction = FALSE, max_size = 1e6) {
 #' is 1).
 #'
 #' @param r effective reproduction number
-#' @param k concentration parameter: when <1, overdispersed
+#' @param k concentration parameter, smaller values mean distributions with
+#' higher variance, in the k = Inf limit, becomes a Poisson branching process
 #' @param tol tolerance passed to numerical solver
 #' @return a list, with $prob the extinction prob and
 #' $error a measure of numerical error

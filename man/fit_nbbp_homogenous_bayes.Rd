@@ -68,7 +68,7 @@ In particular, we fit a Bayesian model in rstan, assuming all cases are observed
 The variables recorded in the stan fit object are (ignoring stan's ordering):
 \enumerate{
 \item \code{r_eff}, the effective reproduction number R;
-\item \code{concentration}, k, the parameter controlling concentration;
+\item \code{concentration}, k, the concentration parameter;
 \item \code{inv_sqrt_concentration}, 1 / sqrt(k);
 \item \code{exn_prob} the probability that the chain goes extinct for this R and k pair;
 \item \code{p_0} the probability that one individual has 0 offspring for this R and k pair.
