@@ -5,9 +5,9 @@
 #' @export
 default_res <- 2.183089
 
-#' Default scale for prior on dispersion
+#' Default scale for prior on concentration
 #'
 #' See vignette("default_priors")
 #'
 #' @export
-default_sisd <- 1.482602
+default_sisc <- 1.482602

@@ -8,7 +8,7 @@
 data.frame with 10,000 samples from the prior and prior predictive distributions.
 \describe{
 \item{r_eff}{The effective reproduction number R.}
-\item{dispersion}{The dispersion parameter k.}
+\item{concentration}{The concentration parameter k.}
 \item{offspring_count}{One sample from offspring distribution given by R, k.}
 \item{chain_size}{One sample from chain size distribution given by R, k.}
 }

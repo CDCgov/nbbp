@@ -14,7 +14,7 @@ fit_nbbp_homogenous_bayes(
   partial_size_max_error = 1e-05,
   shape_r_eff = nbbp::default_res,
   rate_r_eff = nbbp::default_res,
-  sigma_inv_sqrt_dispersion = nbbp::default_sisd,
+  sigma_inv_sqrt_concentration = nbbp::default_sisc,
   iter = 5000,
   control = list(adapt_delta = 0.9),
   ...
@@ -47,7 +47,7 @@ much smaller than, this value, as discussed in the "Implementation details" vign
 
 \item{rate_r_eff}{rate parameter of Gamma prior on r_eff.}
 
-\item{sigma_inv_sqrt_dispersion}{scale of HalfNormal prior on 1 / sqrt(dispersion).}
+\item{sigma_inv_sqrt_concentration}{scale of HalfNormal prior on 1 / sqrt(concentration).}
 
 \item{iter}{number of iterations for rstan::sampling, default of 5000 intends to be conservative.}
 
@@ -68,8 +68,8 @@ In particular, we fit a Bayesian model in rstan, assuming all cases are observed
 The variables recorded in the stan fit object are (ignoring stan's ordering):
 \enumerate{
 \item \code{r_eff}, the effective reproduction number R;
-\item \code{dispersion}, k, the parameter controlling (over)dispersion;
-\item \code{inv_sqrt_dispersion}, 1 / sqrt(k);
+\item \code{concentration}, k, the concentration parameter;
+\item \code{inv_sqrt_concentration}, 1 / sqrt(k);
 \item \code{exn_prob} the probability that the chain goes extinct for this R and k pair;
 \item \code{p_0} the probability that one individual has 0 offspring for this R and k pair.
 }
@@ -100,6 +100,6 @@ PMF which can make it sum to values ever so slightly larger than 1. This is hand
 rescaling the CDF such that it does not exceed 1 in the range it needs to be evaluated.
 
 We let r_eff ~ Gamma(shape = shape_r_eff, rate = rate_r_eff), and
-1/sqrt(dispersion) ~ HalfNormal(sigma = sigma_inv_sqrt_dispersion).
+1/sqrt(concentration) ~ HalfNormal(sigma = sigma_inv_sqrt_concentration).
 For more on the priors and their default values see \code{vignette("default_priors")}.
 }

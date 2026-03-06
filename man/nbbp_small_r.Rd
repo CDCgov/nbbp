@@ -9,7 +9,7 @@ nbbp_small_r(r, k)
 \arguments{
 \item{r}{effective reproduction number, must be > 1}
 
-\item{k}{dispersion parameter}
+\item{k}{concentration parameter}
 }
 \value{
 the corresponding subcritical R < 1

@@ -30,7 +30,7 @@
 #' @param q as `x`
 #' @param n number of samples to draw
 #' @param r effective reproduction number
-#' @param k dispersion parameter
+#' @param k concentration parameter
 #' @param condition_on_extinction logical, should we condition_on_extinction the process on
 #' extinction (TRUE) or not (FALSE)
 #' @param max_size when drawing samples, the pmf for non-infinite chains is truncated to
@@ -198,7 +198,8 @@ rnbbp <- function(n, r, k, condition_on_extinction = FALSE, max_size = 1e6) {
 #' is 1).
 #'
 #' @param r effective reproduction number
-#' @param k dispersion parameter: when <1, overdispersed
+#' @param k concentration parameter, smaller values mean distributions with
+#' higher variance, in the k = Inf limit, becomes a Poisson branching process
 #' @param tol tolerance passed to numerical solver
 #' @return a list, with $prob the extinction prob and
 #' $error a measure of numerical error
@@ -220,13 +221,13 @@ nbbp_ep <- function(r, k, tol = .Machine$double.eps) {
 #' Negative binomial parameterization conversion
 #'
 #' @details
-#' Converts between the mean-dispersion parameterization and the
+#' Converts between the mean-concentration parameterization and the
 #' probability-size parameterization of the Negative Binomial.
-#' Supply either prob and size to get mu (mean) and size (dispersion), or
+#' Supply either prob and size to get mu (mean) and size (concentration), or
 #' mu and size to get prob and size.
 #'
 #' @param size either the number of samples (probability-size
-#' parameterization) or the dispersion parameter (mean-dispersion
+#' parameterization) or the concentration parameter (mean-concentration
 #' parameterization)
 #' @param prob probability of success in each trial
 #' @param mu mean
@@ -256,7 +257,7 @@ nb_param_convert <- function(size = NULL, prob = NULL, mu = NULL) {
 #' Waxman and Nouvellet(https://doi.org/10.1016/j.jtbi.2019.01.033)
 #'
 #' @param r effective reproduction number
-#' @param k dispersion parameter
+#' @param k concentration parameter
 #' @return named vector providing the (conditioned on there being a finite
 #' chain size, i.e. on extinction) mean and variance of the final size.
 #'
@@ -286,7 +287,7 @@ nbbp_stats <- function(r, k) {
 #' on the final chain size.
 #'
 #' @param r effective reproduction number, must be > 1
-#' @param k dispersion parameter
+#' @param k concentration parameter
 #' @return the corresponding subcritical R < 1
 #'
 #' @export

@@ -9,7 +9,8 @@ nbbp_ep(r, k, tol = .Machine$double.eps)
 \arguments{
 \item{r}{effective reproduction number}
 
-\item{k}{dispersion parameter: when <1, overdispersed}
+\item{k}{concentration parameter, smaller values mean distributions with
+higher variance, in the k = Inf limit, becomes a Poisson branching process}
 
 \item{tol}{tolerance passed to numerical solver}
 }
