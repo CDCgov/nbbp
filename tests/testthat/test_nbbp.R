@@ -185,3 +185,127 @@ test_that("chain summary statistics are correct", {
   expect_equal(means_an, means_bf, tolerance = 1e-6)
   expect_equal(vars_an, vars_bf, tolerance = 1e-6)
 })
+
+test_that("internal broadcasting works as expected", {
+  size <- 1:6
+  r_small <- 1.0 + c(0.25, 0.5, 0.75)
+  k_small <- c(0.01, 0.1)
+  coe_small <- c(TRUE, FALSE, TRUE)
+  coe_bad_small <- c(TRUE, FALSE, TRUE, TRUE, FALSE)
+
+  r <- rep(r_small, 2)
+  k <- rep(k_small, 3)
+  coe <- rep(coe_small, 2)
+  coe_bad <- c(TRUE, FALSE, TRUE, TRUE, FALSE, TRUE)
+
+  exn_probs <- sapply(seq_along(size), function(i) {
+    sum(nbbp_ep(r[i], k[i])$prob)
+  })
+
+  expect_equal(
+    .handle_conditioning(size, r, k, condition_on_extinction = FALSE),
+    list(exn_probs = exn_probs, cond_probs = rep(1.0, length(size)))
+  )
+
+  expect_equal(
+    .handle_conditioning(size, r, k, condition_on_extinction = coe_small),
+    list(exn_probs = exn_probs, cond_probs = ifelse(coe, exn_probs, 1.0))
+  )
+
+  expect_error(.handle_conditioning(
+    size,
+    r = r[1],
+    k = k[1],
+    condition_on_extinction = coe_bad_small
+  ))
+
+  expect_warning({
+    recyc <- .handle_conditioning(
+      size,
+      r,
+      k,
+      condition_on_extinction = coe_bad_small
+    )
+  })
+
+  expect_equal(
+    recyc,
+    list(exn_probs = exn_probs, cond_probs = ifelse(coe_bad, exn_probs, 1.0))
+  )
+})
+
+test_that("user-level broadcasting works as expected", {
+  max_size <- 10 + 1:12
+  r_small <- c(0.25, 0.5, 0.75)
+  k_small <- c(0.01, 0.1, 1.0, 10.0)
+
+  r <- rep(r_small, 4)
+  k <- rep(k_small, 3)
+
+  cdf_expected <- sapply(seq_along(max_size), function(i) {
+    sum(dnbbp(1:max_size[i], r[i], k[i]))
+  })
+
+  expect_equal(
+    pnbbp(max_size, r, k),
+    cdf_expected,
+    tolerance = .Machine$double.eps
+  )
+
+  pmf_expected <- sapply(seq_along(max_size), function(i) {
+    sum(dnbbp(max_size[i], r[i], k[i]))
+  })
+
+  expect_equal(
+    dnbbp(max_size, r, k),
+    pmf_expected,
+    tolerance = .Machine$double.eps
+  )
+})
+
+test_that("rnbbp works", {
+  expect_no_error(
+    withr::with_seed(42, {
+      tmp <- rnbbp(10, 0.1, 0.5, TRUE)
+    })
+  )
+  expect_no_error(
+    withr::with_seed(42, {
+      tmp <- rnbbp(10, 0.1, 0.5, FALSE)
+    })
+  )
+})
+
+test_that("rnbbp produces what we expect when recycling parameters", {
+  withr::with_seed(42, {
+    sizes_oneoff <- .rnbbp(10, 0.3, 0.2, FALSE, 1e6)
+  })
+  withr::with_seed(42, {
+    sizes <- rnbbp(10, 0.3, 0.2, FALSE, 1e6)
+  })
+  expect_equal(sizes, sizes_oneoff)
+
+  withr::with_seed(42, {
+    sizes_multi_oneoff <- c(
+      .rnbbp(4, 0.3, 0.1, TRUE, 1e6),
+      .rnbbp(3, 0.2, 1.0, FALSE, 1e6),
+      .rnbbp(3, 0.3, 10.0, TRUE, 1e6)
+    )
+  })
+  withr::with_seed(42, {
+    # Internal mapply usage means we get more errors the more length
+    # mismatches we have in our inputs, need to soak both up
+    expect_warning({
+      expect_warning({
+        sizes_multi <- rnbbp(
+          10,
+          c(0.3, 0.2),
+          c(0.1, 1.0, 10.0),
+          c(TRUE, FALSE),
+          1e6
+        )
+      })
+    })
+  })
+  expect_equal(sizes_multi, sizes_multi_oneoff)
+})

@@ -135,3 +135,37 @@ table_add_1d <- function(t1, t2, keep_zeros = FALSE) {
     )
   }
 }
+
+#' For vectorizing rnbbp, recycles parameter counts and computes number of sims at each
+#'
+#' @returns list, each item containing n, the number of items to simulate, and the values
+#' of all parameters to be simulated. Note that n may be 0.
+#'
+#' @keywords internal
+.rng_param_recycler <- function(n, ...) {
+  if (length(n) > 1) {
+    n <- length(n)
+  }
+
+  pars <- list(...)
+  num_par_combos <- max(lengths(pars))
+
+  n_per <- rep.int(n %/% num_par_combos, num_par_combos)
+  remainder <- n %% num_par_combos
+  if (remainder > 0) {
+    n_per[seq_len(remainder)] <- n_per[seq_len(remainder)] + 1
+  }
+
+  stopifnot("Error in computing draws per parameter size" = sum(n_per) == n)
+
+  mapply_args <- c(
+    pars,
+    list(
+      n = n_per,
+      FUN = list,
+      SIMPLIFY = FALSE
+    )
+  )
+
+  do.call(mapply, mapply_args)
+}
