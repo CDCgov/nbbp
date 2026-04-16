@@ -2,7 +2,27 @@
 borealpox <- rep(1, 7)
 
 # Table 1 of https://doi.org/10.1016/j.jtbi.2011.10.039
-pneumonic_plague <- c(8, 5, 4, 5009, 2, 13, 35, 18, 39, 16, 42, 3, 18, 12, 30, 10, 2, 2, 6)
+pneumonic_plague <- c(
+  8,
+  5,
+  4,
+  5009,
+  2,
+  13,
+  35,
+  18,
+  39,
+  16,
+  42,
+  3,
+  18,
+  12,
+  30,
+  10,
+  2,
+  2,
+  6
+)
 
 # Text S2 of https://doi.org/10.1371/journal.ppat.1004452
 measles_us_97 <- c(

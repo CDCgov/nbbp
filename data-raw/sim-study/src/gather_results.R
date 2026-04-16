@@ -14,7 +14,13 @@ bayes <- lapply(
   list.files("data-raw/sim-study/bayes", full.names = TRUE),
   function(fp) {
     true_par <- parse_par(fp)
-    est <- read.table(fp, header = FALSE, stringsAsFactors = FALSE, row.names = 1) |> t()
+    est <- read.table(
+      fp,
+      header = FALSE,
+      stringsAsFactors = FALSE,
+      row.names = 1
+    ) |>
+      t()
     res <- cbind(true_par, est, data.frame(estimator = "bayes"))
     row.names(res) <- NULL
     return(res)
@@ -25,7 +31,13 @@ ml <- lapply(
   list.files("data-raw/sim-study/maxlik", full.names = TRUE),
   function(fp) {
     true_par <- parse_par(fp)
-    est <- read.table(fp, header = FALSE, stringsAsFactors = FALSE, row.names = 1) |> t()
+    est <- read.table(
+      fp,
+      header = FALSE,
+      stringsAsFactors = FALSE,
+      row.names = 1
+    ) |>
+      t()
     res <- cbind(true_par, est, data.frame(estimator = "maxlik"))
     row.names(res) <- NULL
     return(res)
@@ -35,6 +47,8 @@ ml <- lapply(
 sim_based_testing <- rbind(do.call(rbind, bayes), do.call(rbind, ml))
 
 sim_unique <- sim_based_testing |> dplyr::distinct()
-stopifnot("Simulation duplicates found" = dim(sim_unique) == dim(sim_based_testing))
+stopifnot(
+  "Simulation duplicates found" = dim(sim_unique) == dim(sim_based_testing)
+)
 
 usethis::use_data(sim_based_testing, overwrite = TRUE)

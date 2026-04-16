@@ -6,15 +6,16 @@ parse_chains <- function(datapath, offset, nchains) {
 }
 
 fit_bayes <- function(
-    offset,
-    nchains,
-    datapath,
-    outpath,
-    seed,
-    iter = 5000,
-    alpha = 0.05,
-    ess_thresh = 1000,
-    rhat_thresh = 1.005) {
+  offset,
+  nchains,
+  datapath,
+  outpath,
+  seed,
+  iter = 5000,
+  alpha = 0.05,
+  ess_thresh = 1000,
+  rhat_thresh = 1.005
+) {
   q_low <- alpha / 2
   q_high <- 1 - q_low
 
@@ -43,10 +44,10 @@ fit_bayes <- function(
     permuted = FALSE
   )
   min_ess <- min(sapply(1:3, function(i) {
-    rstan::ess_bulk(par[, , i])
+    rstan::ess_bulk(par[,, i])
   }))
   max_rhat <- max(sapply(1:3, function(i) {
-    rstan::Rhat(par[, , i])
+    rstan::Rhat(par[,, i])
   }))
 
   if (min_ess > ess_thresh && max_rhat < rhat_thresh) {
@@ -74,13 +75,14 @@ fit_bayes <- function(
 }
 
 fit_ml <- function(
-    offset,
-    nchains,
-    datapath,
-    outpath,
-    seed,
-    nboot = 1000,
-    alpha = 0.05) {
+  offset,
+  nchains,
+  datapath,
+  outpath,
+  seed,
+  nboot = 1000,
+  alpha = 0.05
+) {
   q_low <- alpha / 2
   q_high <- 1 - q_low
 

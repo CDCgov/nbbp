@@ -528,7 +528,7 @@ test_that("stan censored and nbbp agree on real data for many parameter values",
           function(r, k) {
             numerator <- sum(log(nbbp::dnbbp(chain_sizes[[i]], r, k)))
             denominator <- 0.0
-            if (any(!is.na(condition_sizes[[i]]))) {
+            if (!(all(is.na(condition_sizes[[i]])))) {
               con_size <- condition_sizes[[i]][!is.na(condition_sizes[[i]])]
               denominator <- sum(log(1.0 - nbbp::dnbbp(con_size - 1, r, k)))
             }

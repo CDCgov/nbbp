@@ -38,10 +38,11 @@
 #'
 #' @export
 dnbbp <- function(
-    x,
-    r,
-    k,
-    condition_on_extinction = FALSE) {
+  x,
+  r,
+  k,
+  condition_on_extinction = FALSE
+) {
   stopifnot(all(x >= 1))
 
   cond_info <- .handle_conditioning(
