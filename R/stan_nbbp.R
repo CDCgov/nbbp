@@ -290,7 +290,6 @@ fit_nbbp_homogenous_ml <- function(
   stopifnot(
     "`max_tries` must be at least `run_reps`" = max_tries >= run_reps
   )
-  init_seed <- seed - 1
   successful <- logical(max_tries)
   fits <- vector("list", max_tries)
   for (i in 1:max_tries) {
@@ -839,7 +838,6 @@ fit_nbbp_homogenous_ml <- function(
       partitioned_data$partial,
       partitioned_data$partial_probs,
       size_max = partial_size_max,
-      error_max = partial_size_max_error
     )
   } else {
     partial_size_max <- 0
