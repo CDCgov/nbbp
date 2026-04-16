@@ -668,15 +668,15 @@ fit_nbbp_homogenous_ml <- function(
   if (length(partial_geq) > 0) {
     # Per-chain per-case sampling probabilities
     # Can't use stopifnot because the message is too long and air keeps moving "# nolint: line_length_linter" to a newline
-    if (any(!is.na(partial_probs[is.na(partial_geq)]))) {
+    if (!(all(is.na(partial_probs[is.na(partial_geq)])))) {
       stop(paste0(
         "Only partially observed chains should have",
         " per-case sampling probabilities"
       ))
     }
     stopifnot(
-      "All partially-observed chains must have per-case sampling probabilities." = all(
-        !is.na(partial_probs)
+      "All partially-observed chains must have per-case sampling probabilities." = !anyNA(
+        partial_probs
       )
     )
   }

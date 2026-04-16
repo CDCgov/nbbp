@@ -15,4 +15,7 @@ jobs:
         with:
           r-version: "4.4.0"
           use-public-rspm: true
+      # run jarl
+      - uses: etiennebacher/setup-jarl@v0.1.1
+      # run pre-commit
       - uses: ./.github/actions/pre-commit
