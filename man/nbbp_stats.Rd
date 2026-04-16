@@ -9,7 +9,7 @@ nbbp_stats(r, k)
 \arguments{
 \item{r}{effective reproduction number}
 
-\item{k}{dispersion parameter}
+\item{k}{concentration parameter}
 }
 \value{
 named vector providing the (conditioned on there being a finite

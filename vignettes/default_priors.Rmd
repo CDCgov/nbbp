@@ -36,7 +36,7 @@ The tradeoff is that in regimes where $R$ is large, we can under-estimate $R$.
 Some might wonder why the prior on $R$ is not more informative, while others might wonder why it is not less informative.
 Broadly, the prior is intended to be slightly informative while simultaneously allowing the data to express themselves in regions of $R$ which may be encountered during expected usage of this package.
 Inference of $R$ from final size data under a negative binomial branching process model is strongly associated with the "stuttering chains" regime of non-sustained transmission.
-This is typically a subcritical ($R < 1$) regime, though with sufficient overdispersion (see below for the effect of $k$) is is possible in the supercritical regime.
+This is typically a subcritical ($R < 1$) regime, though with sufficient overconcentration (see below for the effect of $k$) is is possible in the supercritical regime.
 
 ```{r, echo=FALSE, message=FALSE}
 library(nbbp)
@@ -53,10 +53,10 @@ prior_predictive |>
 ## Default prior on $k$
 
 Note that the prior on $k$ is implicit (though we can still discuss it); the explicit prior is placed on $1 / \sqrt{k}$.
-The choice of a HalfNormal on $1 / \sqrt{k}$ follows best-practices for a ["weakly" informative prior](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial) on the NegativeBinomial over-dispersion parameter.
+The choice of a HalfNormal on $1 / \sqrt{k}$ follows best-practices for a ["weakly" informative prior](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial) on the NegativeBinomial over-concentration parameter.
 
-The parameter $k$ controls the dispersion of the offspring distribution, as well as the final size distribution, and plays a strong role in the probability of extinction of a chain.
-When $k$ is _large_, there is _less_ dispersion relative to the mean, and in the limit of $k \to \infty$, the NegativeBinomial approaches the Poisson.
+The parameter $k$ controls the concentration of the offspring distribution, as well as the final size distribution, and plays a strong role in the probability of extinction of a chain.
+When $k$ is _large_, there is _less_ concentration relative to the mean, and in the limit of $k \to \infty$, the NegativeBinomial approaches the Poisson.
 At $k = 1$, the NegativeBinomial coincides with the Geometric distribution.
 When $k$ is small, the variance of the offspring distribution gets larger, increasing the variance of the chain size distribution.
 This increase in variance also increases the probability that an individual has no offspring, increasing the extinction probability.
@@ -72,8 +72,8 @@ The (implicit) default prior on $k$ has heavy tails, reflecting the prior's pull
 Truncating to $k \leq 10$ for visualization purposes, the (conditional implicit) prior is
 ```{r, echo=FALSE, message=FALSE}
 prior_predictive |>
-  dplyr::filter(dispersion <= 10) |>
-  ggplot(aes(x = dispersion, y = after_stat(density))) +
+  dplyr::filter(concentration <= 10) |>
+  ggplot(aes(x = concentration, y = after_stat(density))) +
   geom_histogram() +
   theme_minimal() +
   xlab("k")
@@ -114,7 +114,7 @@ The samples from the prior predictive offspring distribution gives us a marginal
 But we can also look at its implied prior distribution, as it is a function of $R$ and $k$.
 ```{r, echo=FALSE, message=FALSE}
 prior_predictive |>
-  dplyr::mutate(p_0 = dnbinom(0, mu = r_eff, size = dispersion)) |>
+  dplyr::mutate(p_0 = dnbinom(0, mu = r_eff, size = concentration)) |>
   ggplot(aes(x = p_0, y = after_stat(density))) +
   geom_histogram() +
   theme_minimal() +

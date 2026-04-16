@@ -37,7 +37,7 @@ We discuss non-extinction in more depth in the "Advanced data" and "Implementati
 
 A NBBP is a branching process where the offspring distribution is $\mathrm{NegativeBinomial}(R, k)$.
 The parameter $R$ is the mean of the distribution, the average number of infections caused by one infected individual, making it the reproduction number.
-The parameter $k$ controls the (over)dispersion of the distribution.
+The parameter $k$ controls the concentration of the distribution and is commonly referred to as the "dispersion" or "overdispersion" parameter (occationally also called the "precision" parameter).
 When $k$ is small, the most probable number of offspring from any infection is $0$, even if $R > 1$.
 However, the variance is large, such that some infections may have a large number of offspring.
 As $k$ approaches infinity, the negative binomial distribution approaches the Poisson distribution, and the NBBP approaches a Poisson branching process.
@@ -79,10 +79,10 @@ rstan::summary(fit)$summary[, c("n_eff", "Rhat")]
 
 Now that we can see our MCMC is trustworthy, we can look at what our results are.
 There are 5 variables tracked in the object.
-Primarily, we have $R$ (`r_eff`) and $k$ (`dispersion`).
+Primarily, we have $R$ (`r_eff`) and $k$ (`concentration`).
 Additionally, we track two values which are functions of $R$ and $k$ but can be useful in their own right.
 These are the probability that a chain goes extinct (`exn_prob`) and the probability that any one infection produces no additional infections (`p_0`).
-As it is the native parameter of the model, we also have $1 / \sqrt{k}$ (`inv_sqrt_dispersion`)
+As it is the native parameter of the model, we also have $1 / \sqrt{k}$ (`inv_sqrt_concentration`)
 
 Let us see what we have estimated.
 
@@ -96,7 +96,7 @@ We can see even greater uncertainty about $k$, which is typical in practice with
 While `rstan` provides some basic plotting capabilities, this is not the only way to do so.
 Here we extract and plot things ourselves directly with ggplot, though we could also use the `bayesplot` package which has many nice visualizations.
 ```{r}
-par_df <- rstan::extract(fit, pars = c("r_eff", "dispersion", "p_0", "exn_prob")) |>
+par_df <- rstan::extract(fit, pars = c("r_eff", "concentration", "p_0", "exn_prob")) |>
   as.data.frame()
 
 par_df |>
@@ -107,15 +107,15 @@ par_df |>
 ```
 Here we can see that the posterior density is greatest for small values of $R$, as well as the long tails with larger values.
 
-The uncertainty about the dispersion parameter often makes it more usefully considered on the log-scale.
+The uncertainty about the concentration parameter often makes it more usefully considered on the log-scale.
 ```{r}
 par_df |>
-  ggplot(aes(x = log(dispersion), y = after_stat(density))) +
+  ggplot(aes(x = log(concentration), y = after_stat(density))) +
   geom_histogram() +
   theme_minimal() +
   xlab("log(k)")
 ```
-This shows us that, while there is considerable uncertainty, the model favors relatively strong overdispersion.
+This shows us that, while there is considerable uncertainty, the model favors relatively strong overconcentration.
 
 The probability that a chain goes extinct (`exn_prob`) is a function of $R$ and $k$.
 ```{r}
@@ -139,7 +139,7 @@ par_df |>
   xlab("probability of 0 offspring")
 ```
 Since we have not seen any chains produce offspring, we should not be surprised to see that this probability is near 1.
-(When there is strong overdispersion (small $k$), this can be near 1 even when $R$ is above 1.)
+(When there is strong overconcentration (small $k$), this can be near 1 even when $R$ is above 1.)
 We might expect, since none of these cases have produced any offspring, that the posterior would have a mode at 1.
 However, the default priors pull towards regimes where this probability is smaller (larger $R$ and $k$ both make it more likely that an infection has offspring), as can be seen in the plot in the "Default priors" vignette.
 

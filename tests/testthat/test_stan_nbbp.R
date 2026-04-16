@@ -123,7 +123,7 @@ test_that(".stan_data_nbbp_homogenous runs without incident without edge cases",
       likelihood = TRUE,
       shape_r_eff = nbbp::default_res,
       rate_r_eff = nbbp::default_res,
-      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+      sigma_inv_sqrt_concentration = nbbp::default_sisc
     ))
   })
 })
@@ -208,7 +208,7 @@ test_that("stan uncensored log-likelihood agrees with nbbp", {
       likelihood = TRUE,
       shape_r_eff = nbbp::default_res,
       rate_r_eff = nbbp::default_res,
-      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+      sigma_inv_sqrt_concentration = nbbp::default_sisc
     )
 
     sdat_big <- .stan_data_nbbp_homogenous(
@@ -223,7 +223,7 @@ test_that("stan uncensored log-likelihood agrees with nbbp", {
       likelihood = TRUE,
       shape_r_eff = nbbp::default_res,
       rate_r_eff = nbbp::default_res,
-      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+      sigma_inv_sqrt_concentration = nbbp::default_sisc
     )
 
     # We just need the fit objects
@@ -297,7 +297,7 @@ test_that("stan censored and size-conditioned log-likelihood agrees with nbbp", 
       likelihood = TRUE,
       shape_r_eff = nbbp::default_res,
       rate_r_eff = nbbp::default_res,
-      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+      sigma_inv_sqrt_concentration = nbbp::default_sisc
     )
 
     # Short chains guarantee warnings, we just need the fit objects
@@ -370,7 +370,7 @@ test_that("stan binomially-sampled agrees with nbbp for fixed truncation", {
       likelihood = TRUE,
       shape_r_eff = nbbp::default_res,
       rate_r_eff = nbbp::default_res,
-      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+      sigma_inv_sqrt_concentration = nbbp::default_sisc
     )
 
     # Short chains guarantee warnings, we just need the fit objects
@@ -421,7 +421,7 @@ test_that("stan binomially-sampled and size-conditioned log-likelihood agrees wi
       likelihood = TRUE,
       shape_r_eff = nbbp::default_res,
       rate_r_eff = nbbp::default_res,
-      sigma_inv_sqrt_dispersion = nbbp::default_sisd
+      sigma_inv_sqrt_concentration = nbbp::default_sisc
     )
 
     # Short chains guarantee warnings, we just need the fit objects

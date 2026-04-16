@@ -2,7 +2,7 @@
 
 export(compute_likelihood_surface)
 export(default_res)
-export(default_sisd)
+export(default_sisc)
 export(dnbbp)
 export(fit_nbbp_homogenous_bayes)
 export(fit_nbbp_homogenous_ml)

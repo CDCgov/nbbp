@@ -16,7 +16,7 @@
   likelihood,
   shape_r_eff,
   rate_r_eff,
-  sigma_inv_sqrt_dispersion
+  sigma_inv_sqrt_concentration
 )
 }
 \arguments{

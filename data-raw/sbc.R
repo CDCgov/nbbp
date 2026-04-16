@@ -57,7 +57,7 @@ do_one_bayes <- function(true_r, true_disp, chain_size, nobs, seed, sampling) {
 
   par <- rstan::extract(
     fit,
-    c("r_eff", "dispersion", "inv_sqrt_dispersion"),
+    c("r_eff", "concentration", "inv_sqrt_concentration"),
     permuted = FALSE
   )
 
@@ -73,20 +73,20 @@ do_one_bayes <- function(true_r, true_disp, chain_size, nobs, seed, sampling) {
 
   par <- rstan::extract(
     fit,
-    c("r_eff", "dispersion", "inv_sqrt_dispersion"),
+    c("r_eff", "concentration", "inv_sqrt_concentration"),
     permuted = TRUE
   )
   res <- c(
     true_r,
     true_disp,
     median(par$r_eff),
-    median(par$dispersion),
+    median(par$concentration),
     quantile(par$r_eff, 0.025),
-    quantile(par$dispersion, 0.025),
+    quantile(par$concentration, 0.025),
     quantile(par$r_eff, 0.975),
-    quantile(par$dispersion, 0.975),
+    quantile(par$concentration, 0.975),
     is_covered(par$r_eff, true_r),
-    is_covered(par$dispersion, true_disp),
+    is_covered(par$concentration, true_disp),
     min_ess,
     max_rhat,
     num_low_bfmi,
@@ -104,7 +104,7 @@ do_one_bayes <- function(true_r, true_disp, chain_size, nobs, seed, sampling) {
     "r_high",
     "k_high",
     paste0("r_covered_", 1:99),
-    paste0("dispersion_covered_", 1:99),
+    paste0("concentration_covered_", 1:99),
     "min_ess",
     "max_rhat",
     "num_low_bfmi",
@@ -123,11 +123,15 @@ load("data/prior_predictive.rda")
 fully_observed <- prior_predictive |>
   head(nsim) |>
   dplyr::mutate(index = dplyr::row_number()) |>
-  dplyr::select(r_eff, dispersion, index) |>
+  dplyr::select(r_eff, concentration, index) |>
   dplyr::mutate(
-    chain_size = purrr::map2(r_eff, dispersion, function(r_eff, dispersion) {
-      rnbbp(n = nobs, r = r_eff, k = dispersion)
-    })
+    chain_size = purrr::map2(
+      r_eff,
+      concentration,
+      function(r_eff, concentration) {
+        rnbbp(n = nobs, r = r_eff, k = concentration)
+      }
+    )
   ) |>
   tidyr::unnest(chain_size) |>
   dplyr::mutate(sampling = "complete")
@@ -146,12 +150,12 @@ sim_based_calibration <- prior_predictive_datasets |>
   tidyr::nest(chain_size = chain_size) |>
   dplyr::mutate(
     analysis = purrr::pmap(
-      list(r_eff, dispersion, chain_size, index, sampling),
-      function(r_eff, dispersion, chain_size, index, sampling) {
+      list(r_eff, concentration, chain_size, index, sampling),
+      function(r_eff, concentration, chain_size, index, sampling) {
         tmp <- capture.output({
           res <- do_one_bayes(
             r_eff,
-            dispersion,
+            concentration,
             chain_size,
             nobs = nobs,
             seed = index,
@@ -217,12 +221,12 @@ r_cov_partial <- sim_based_calibration |>
 
 k_cov_full <- sim_based_calibration |>
   dplyr::filter(sampling == "complete") |>
-  dplyr::select(contains("dispersion_covered")) |>
+  dplyr::select(contains("concentration_covered")) |>
   colMeans()
 
 k_cov_partial <- sim_based_calibration |>
   dplyr::filter(sampling == "incomplete") |>
-  dplyr::select(contains("dispersion_covered")) |>
+  dplyr::select(contains("concentration_covered")) |>
   colMeans()
 
 sbc_quants <- data.frame(

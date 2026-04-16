@@ -6,9 +6,15 @@ parse_chains <- function(datapath, offset, nchains) {
 }
 
 fit_bayes <- function(
-    offset, nchains,
-    datapath, outpath,
-    seed, iter = 5000, alpha = 0.05, ess_thresh = 1000, rhat_thresh = 1.005) {
+    offset,
+    nchains,
+    datapath,
+    outpath,
+    seed,
+    iter = 5000,
+    alpha = 0.05,
+    ess_thresh = 1000,
+    rhat_thresh = 1.005) {
   q_low <- alpha / 2
   q_high <- 1 - q_low
 
@@ -17,9 +23,12 @@ fit_bayes <- function(
   stopifnot("Got bad chains" = (all(is.numeric(chains)) && all(chains > 0)))
 
   bayes_ests <- c(
-    r_point = NA, k_point = NA,
-    r_low = NA, r_high = NA,
-    k_low = NA, k_high = NA
+    r_point = NA,
+    k_point = NA,
+    r_low = NA,
+    r_high = NA,
+    k_low = NA,
+    k_high = NA
   )
 
   bayes <- nbbp::fit_nbbp_homogenous_bayes(
@@ -28,7 +37,11 @@ fit_bayes <- function(
     seed = seed
   )
 
-  par <- rstan::extract(bayes, c("r_eff", "dispersion", "inv_sqrt_dispersion"), permuted = FALSE)
+  par <- rstan::extract(
+    bayes,
+    c("r_eff", "concentration", "inv_sqrt_concentration"),
+    permuted = FALSE
+  )
   min_ess <- min(sapply(1:3, function(i) {
     rstan::ess_bulk(par[, , i])
   }))
@@ -37,21 +50,37 @@ fit_bayes <- function(
   }))
 
   if (min_ess > ess_thresh && max_rhat < rhat_thresh) {
-    par <- rstan::extract(bayes, c("r_eff", "dispersion", "inv_sqrt_dispersion"), permuted = TRUE)
+    par <- rstan::extract(
+      bayes,
+      c("r_eff", "concentration", "inv_sqrt_concentration"),
+      permuted = TRUE
+    )
     bayes_ests <- c(
       r_point = unname(median(par$r_eff)),
-      k_point = unname(median(par$dispersion)),
+      k_point = unname(median(par$concentration)),
       r_low = unname(quantile(par$r_eff, q_low)),
       r_high = unname(quantile(par$r_eff, q_high)),
-      k_low = unname(quantile(par$dispersion, q_low)),
-      k_high = unname(quantile(par$dispersion, q_high))
+      k_low = unname(quantile(par$concentration, q_low)),
+      k_high = unname(quantile(par$concentration, q_high))
     )
   }
 
-  write.table(as.data.frame(bayes_ests), file = outpath, col.names = FALSE, quote = FALSE)
+  write.table(
+    as.data.frame(bayes_ests),
+    file = outpath,
+    col.names = FALSE,
+    quote = FALSE
+  )
 }
 
-fit_ml <- function(offset, nchains, datapath, outpath, seed, nboot = 1000, alpha = 0.05) {
+fit_ml <- function(
+    offset,
+    nchains,
+    datapath,
+    outpath,
+    seed,
+    nboot = 1000,
+    alpha = 0.05) {
   q_low <- alpha / 2
   q_high <- 1 - q_low
 
@@ -60,9 +89,12 @@ fit_ml <- function(offset, nchains, datapath, outpath, seed, nboot = 1000, alpha
   stopifnot("Got unexpected number of chains" = (length(chains) == nchains))
 
   maxlik_ests <- c(
-    r_point = NA, k_point = NA,
-    r_low = NA, r_high = NA,
-    k_low = NA, k_high = NA
+    r_point = NA,
+    k_point = NA,
+    r_low = NA,
+    r_high = NA,
+    k_low = NA,
+    k_high = NA
   )
   maxlik <- nbbp::fit_nbbp_homogenous_ml(
     all_outbreaks = chains,
@@ -72,13 +104,18 @@ fit_ml <- function(offset, nchains, datapath, outpath, seed, nboot = 1000, alpha
   if (maxlik$return_code == 0) {
     maxlik_ests <- c(
       r_point = unname(maxlik$par["r_eff"]),
-      k_point = unname(maxlik$par["dispersion"]),
+      k_point = unname(maxlik$par["concentration"]),
       r_low = unname(maxlik$ci["r_eff", 1]),
       r_high = unname(maxlik$ci["r_eff", 2]),
-      k_low = unname(maxlik$ci["dispersion", 1]),
-      k_high = unname(maxlik$ci["dispersion", 2])
+      k_low = unname(maxlik$ci["concentration", 1]),
+      k_high = unname(maxlik$ci["concentration", 2])
     )
   }
 
-  write.table(as.data.frame(maxlik_ests), file = outpath, col.names = FALSE, quote = FALSE)
+  write.table(
+    as.data.frame(maxlik_ests),
+    file = outpath,
+    col.names = FALSE,
+    quote = FALSE
+  )
 }

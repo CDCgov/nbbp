@@ -159,20 +159,20 @@ We can marginalize this over the posterior distribution on $(R,k)$ and use the p
 We will need to use the PMF (`dnbbp`) and CDF (`pnbbp`) functions from `nbbp`.
 (Here we use 500 samples for illustrative purposes, but in general one should use the entire posterior.)
 ```{r}
-probs <- rstan::extract(fit_cen, pars = c("r_eff", "dispersion")) |>
+probs <- rstan::extract(fit_cen, pars = c("r_eff", "concentration")) |>
   as.data.frame() |>
   head(500) |>
   mutate(
     ccdf = purrr::map2_dbl(
-      r_eff, dispersion, function(r_eff, dispersion) {
-        1 - pnbbp(5008, r_eff, dispersion)
+      r_eff, concentration, function(r_eff, concentration) {
+        1 - pnbbp(5008, r_eff, concentration)
       }
     )
   ) |>
   mutate(
     pr_non_extinct = purrr::map2_dbl(
-      r_eff, dispersion, function(r_eff, dispersion) {
-        dnbbp(Inf, r_eff, dispersion)
+      r_eff, concentration, function(r_eff, concentration) {
+        dnbbp(Inf, r_eff, concentration)
       }
     )
   ) |>
@@ -190,8 +190,8 @@ Estimates of $k$ are even more similar between the two analysis choices than $R$
 ```{r}
 k_df <- data.frame(
   k = c(
-    unlist(rstan::extract(fit_inf, "dispersion")),
-    unlist(rstan::extract(fit_cen, "dispersion"))
+    unlist(rstan::extract(fit_inf, "concentration")),
+    unlist(rstan::extract(fit_cen, "concentration"))
   ),
   large_chain = c(
     rep("non-extinct", 10000),
