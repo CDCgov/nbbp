@@ -1,12 +1,12 @@
 Package: nbbp
-Title: Stuttering chains inference and simulations
+Title: Outbreak size inference and simulations
 Version: 1.0.0
 Authors@R:
     c(
         person("Scott", "Olesen", , "ulp7@cdc.gov", role = c("aut")),
         person("Andrew", "Magee", , "rzg0@cdc.gov", role = c("aut", "cre"))
     )
-Description: Inference and simulation for stuttering chains under a negative binomial branching process.
+Description: Inference and simulation for outbreak sizes under a negative binomial branching process.
 License: Apache License (>= 2)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

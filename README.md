@@ -2,7 +2,7 @@
 
 ## Overview
 
-`nbbp` is an R package for inferring the effective reproduction number and concentration parameter from stuttering chains.
+`nbbp` is an R package for inferring the effective reproduction number and concentration parameter from outbreak size data.
 
 ## Getting started
 
@@ -16,8 +16,8 @@ When installing, the package will compile a [stan model](https://mc-stan.org/use
 
 If building the vignettes, after loading the package in R (`library("nbbp")`), the following vignettes will be available:
 
-- `vignette("nbbp")`: introduction to the package and inference when all chains are completely observed and extinct
-- `vignette("advanced_data")`: how to handle censored observations and very large (or non-extinct) chains
+- `vignette("nbbp")`: introduction to the package and inference when all outbreaks are completely observed and extinct
+- `vignette("advanced_data")`: how to handle censored observations and very large (or non-extinct) outbreaks
 - `vignette("default_priors")`: plots of default priors and prior predictive distributions
 
 ## Project Admins
