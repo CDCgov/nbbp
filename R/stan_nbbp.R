@@ -838,7 +838,7 @@ fit_nbbp_homogenous_ml <- function(
       partitioned_data$partial,
       partitioned_data$partial_probs,
       size_max = partial_size_max,
-      error_max = partial_size_max_error,
+      error_max = partial_size_max_error
     )
   } else {
     partial_size_max <- 0
