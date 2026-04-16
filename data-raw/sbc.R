@@ -62,10 +62,10 @@ do_one_bayes <- function(true_r, true_disp, chain_size, nobs, seed, sampling) {
   )
 
   min_ess <- min(sapply(1:3, function(i) {
-    rstan::ess_bulk(par[, , i])
+    rstan::ess_bulk(par[,, i])
   }))
   max_rhat <- max(sapply(1:3, function(i) {
-    rstan::Rhat(par[, , i])
+    rstan::Rhat(par[,, i])
   }))
   num_low_bfmi <- length(rstan::get_low_bfmi_chains(fit))
   num_divergent <- rstan::get_num_divergent(fit)

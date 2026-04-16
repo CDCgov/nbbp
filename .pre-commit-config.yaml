@@ -9,12 +9,10 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
         exclude: renv/activate.R
-  - repo: https://github.com/lorenzwalthert/precommit
-    rev: v0.4.3.9021
+  - repo: https://github.com/posit-dev/air-pre-commit
+    rev: 0.9.0
     hooks:
-      - id: style-files
-        exclude: renv/activate.R
-      - id: lintr
+      - id: air-format
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
