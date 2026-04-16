@@ -1,10 +1,10 @@
 ^.*\.Rproj$
 ^.*\.Rproj\.user$
 ^data-raw$
-\.lintr
 \.github
 \.secrets\.baseline
 \.pre-commit-config.yaml
+^paper$
 LICENSE
 ^doc$
 ^Meta$
