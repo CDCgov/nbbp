@@ -96,8 +96,29 @@ When brute-force computing the CDF (by summing the PMF), sometimes it evaluates 
 In practice, this appears to happen exclusively for $R < 1$ and the maximum seems to be less than $1 + 10^{-12}$.
 This is noticeable when censoring observations, where for chain size $c$ we need $\text{Pr}(C >= c) = 1 - \text{CDF}(c - 1)$.
 When the CDF exceeds one, this is negative and MCMC cannot appropriately explore the $R < 1$ region.
-To avoid these issues, the `stan` model code checks that the CDF does not exceed 1 over the range it needs to be evaluated.
-If it ever exceeds 1, we rescale so that the maximum CDF is [`1.0 - machine_precision()`](https://mc-stan.org/docs/stan-users-guide/floating-point.html).
+
+`nbbp` takes two approaches to mitigating this problem.
+First, we use Stan's built-in negative binomial log-density function `neg_binomial_2_lpmf` to compute the final size PMF.
+Let $\mathrm{NegativeBinomial}(x; R, k)$ be the negative binomial PMF evaluated at $x$ with mean $R$ and concentration $k$.
+The PMF of the final size distribution can be written
+
+$$
+\mathrm{Pr}(c \mid R, k) = -\log(c) + \mathrm{NegativeBinomial}(c - 1; R c, k c)
+$$
+
+Compared to alternative representations of the likelihood (for example, directly translating equation 9 of Blumberg & Lloyd-Smith (2013) to Stan code), using `neg_binomial_2_lpmf` appeared to lead to the lowest frequency of CDF values exceeding 1.
+
+Second, when an invalid CDF value (i.e., greater than 1) is encountered, `nbbp` dynamically rescales the CDF in Stan.
+Let $c_\mathrm{max}$ be the maximum outbreak size for which we need to evaluate $\mathrm{Pr}(c \mid R, k)$.
+If $\sum_{x=1}^{c_\mathrm{max}} \mathrm{Pr}(x \mid R, k) > 1$, then we instead use:
+
+$$
+\widetilde{\mathrm{Pr}}(c \mid R, k) = \frac{1 - \epsilon}{\sum_{x = 1}^{c_\mathrm{max}} \mathrm{Pr}(x \mid R, k)} \cdot \mathrm{Pr}(c \mid R, k)
+$$
+
+As such, the rescaled CDF is safely less than one.
+In practice, we use Stan's [`machine_precision()`](https://mc-Stan.org/docs/Stan-users-guide/floating-point.html) for $\epsilon$.
+Note that given the modularly implemented, multipartite likelihood, $\widetilde{\mathrm{Pr}}$ is only used in the portions of the likelihood involving the CDF of completely observed outbreaks (i.e., censoring and size-conditioning).
 
 ## Incompletely observed chains
 
