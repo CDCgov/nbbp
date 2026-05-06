@@ -34,57 +34,64 @@ date: 12 Mar 2026
 # Summary
 
 During an infectious disease outbreak, each infected person, or "case," infects a certain number of other people, often zero.
-In a Galton-Watson branching process model of an outbreak, the number of onward infections per infector is drawn from a statistical distribution, such as the negative binomial, parameterised by the effective reproduction number $R$ and a concentration parameter $k$, such that the distribution has mean $R$ and variance $R + R^2/k$.
-Inferring the parameters of that distribution is important for forecasting the future of outbreaks and for determining what interventions are most appropriate.
-`nbbp` is an [R](https://www.r-project.org/) [@r2021r] package for Bayesian inference of negative binomial branching process parameters using final outbreak size data [@blumberg2013inference; @nishiura2012estimating].
-
-# Statement of need
+In a branching process model of an outbreak, the number of onward infections per infector is drawn from some "offspring" distribution, commonly the negative binomial, which is parameterised by the effective reproduction number $R$ and a concentration parameter $k$, yielding mean $R$ and variance $R + R^2/k$.
 
 Ideally, investigations of infectious disease outbreaks would yield a complete transmission tree, showing who infected whom.
 In practice, we often only have the final size of each outbreak.
-Methods to infer negative binomial branching process parameters from final sizes can suffer problems when outbreaks are small, when there are small numbers of outbreaks, and when outbreaks are large.
+Thus, inferring the parameters of the offspring distribution from final size data is important for calibrating outbreak responses and predicting future case burdens.
+`nbbp` is an [R](https://www.r-project.org/) [@r2021r] package providing Bayesian inference of negative binomial branching process parameters from such data [@blumberg2013inference; @nishiura2012estimating].
 
-Accurate analysis of small datasets requires Bayesian approaches because standard statistical guarantees like unbiasedness may not be useful when estimator variance are very large, and frequentist confidence intervals based on large-sample theory may be misleading or invalid.
-These distortions can affect probabilistic judgments on questions like "Is $R \leq 1$ or not?" which can be crucial for public health decision-making.
+# State of the field
 
-Analysis of large outbreaks requires explicit censoring and probabilistic conditioning to avoid drawing misleading conclusions.
-Galton-Watson branching processes assume that the offspring distribution is constant throughout every outbreak, which can be a good model of epidemic dynamics when outbreaks are new and small, but is inappropriate for large outbreaks, since these processes inevitably ends in:
+The R package [`epichains`](https://github.com/epiverse-trace/epichains) [@azam2025epichains] implements a variety of branching process models, including those without analytical solutions, with a focus on case data, and is tested via [`testthat`](https://testthat.r-lib.org/) [@wickham2011testthat].
+It provides likelihoods but generally leaves inference to the user.
+The Stan-based R package [`estRodis`](https://github.com/mwohlfender/estRodis) [@hodcroft2025estimating] implements Bayesian inference for negative binomial branching process models, but focuses on genomic data and requires a domain-specific mutation rate parameter [@hodcroft2025estimating; @tran2024estimating].
+
+# Statement of need
+
+Methods to infer negative binomial branching process parameters from final sizes can suffer problems when outbreaks are small, when there are small numbers of outbreaks, and when outbreaks are exceptionally large.
+
+For example, from 2015 to 2023, 7 cases of Borealpox were identified without evidence of onward, person-to-person transmission [@mooring2025six].
+The lack of outbreaks larger than a single case means the likelihood surface is pathological, converging to probability one as $R \to 0$ and $k \to 0$, making maximum likelihood estimation fraught.
+Further, there are not many observed outbreaks, _i.e._ the sample size is small.
+When the sample size is small, frequentist confidence intervals can be very wide and the variance of the maximum likelihood estimate large.
+
+Lastly, consider the 19 outbreaks (each containing at least two cases) analyzed by @nishiura2012estimating.
+While 18 of these contained no more than 42 cases, one contained 5009.
+Branching processes for final size data assume that the offspring distribution is constant throughout every outbreak, which can be a good model of epidemic dynamics when outbreaks are new and small, but is inappropriate for large outbreaks, as the only mathematical endpoints are:
 
 1. _extinction_, in which stochastic fade out leads to an outbreak with a finite number of cases, or
 2. _explosion_, in which super-critical growth leads to an outbreak of infinite size.
 
 In reality, no outbreak is truly infinite, and large, finite outbreaks typically signal that $R > 1$ initially but that $R$ fell over the course of the outbreak, for example, because of depletion of susceptibles or a public health intervention.
-However, naively asserting that a large outbreak went extinct implies that $R \approx 1$.
-Thus, to allow rational estimates for early-outbreak $R$, inference methods should allow users to assert that an outbreak would have been an explosion or would have been at least as large as it was.
-Conditioning on extinction can also induce a bimodal likelihood surface [@waxman2019sub], which complicates inference of whether $R \leq 1$ or $R > 1$.
+Thus, exceptionally large outbreaks are both informative and severe model violations.
 
-`nbbp` accounts for large outbreaks by allowing users to assert that each outbreak was one of:
+A general-purpose solution should enable the _absence_ of explosions to be treated as evidence that $R < 1$, while also allowing exceptionally large outbreaks to be appropriately informative observations.
+This requires that one does not condition the likelihood on extinction, which induces a likelihood surface containing both sub- and super-critical maxima [@waxman2019sub].
+Then, one can either:
+- treat an exceptionally large outbreak as an explosion, more or less asserting that the outbreak would have been an explosion absent the factors outside the model which suppressed $R$, or
+- (right-)censor the exceptionally large outbreak, in essence allowing the model to determine whether the outbreak would have been an explosion or not.
 
+As such, `nbbp` is designed to provide:
+1. rigorous Bayesian inference of final size data, which should be more robust in the face of pathological likelihood surfaces and small sample sizes, and
+2. flexible handling of exceptionally large outbreaks.
+
+# Software design
+
+## Software ecosystem
+
+`nbbp` uses [Stan](https://mc-Stan.org/) [@stan2026stan] for statistical inference, interfacing with R using [`Rstan`](https://mc-Stan.org/rstan/articles/rstan.html) [@stan2025rstan] and [`rstantools`](https://mc-Stan.org/rstantools/) [@gabry2026rstantools]. By providing standard `rstan` outputs, `nbbp` can be integrated into larger epidemiological analyses using this mature Bayesian software ecosystem. `nbbp`'s design is modular, enabling the addition of new models (e.g., extensions to time-series or geospatial modeling) that leveraging the underlying Stan codebase with minimal architecture changes. The package is extensively tested via `testthat`.
+
+## Support for censoring, partially observed outbreaks, and non-extinction
+
+For inference, `nbbp` accommodates a wide variety of observation processes for finite chain sizes as well as flexible handling for exceptionally large outbreaks.
+In total, it ecognizes four kinds of observed chain sizes as input:
 1. **Completely observed and extinct**, optionally of a minimum size. The exact number $c$ of cases in the outbreak is known, and outbreaks of size at least $C$ are observed. If all "outbreaks", including single infections, are reported, then $C = 1$. Otherwise, $C$ is the minimum outbreak size required for an outbreak to appear in the dataset.
 1. **Censored**. The number of cases is $c \geq C$.
 1. **Partially observed and extinct**. Each case in the outbreak has an independent probability $p$ of being observed, and $c$ cases are observed.
 1. An **explosion**, that is, an outbreak that grew (or would have grown) to infinite size.
 
-# Statement of the field
-
-The R package [`epichains`](https://github.com/epiverse-trace/epichains) [@azam2025epichains] implements a variety of branching process models, including those without analytical solutions.
-It provides likelihoods but generally leaves inference to the user.
-The Stan-based R package [`estRodis`](https://github.com/mwohlfender/estRodis) [@hodcroft2025estimating] implements Bayesian inference for negative binomial branching process models, but focuses on genomic data and requires a domain-specific mutation rate parameter [@hodcroft2025estimating; @tran2024estimating].
-
-Like `epichains`, `nbbp` focuses on case data, implements both outbreak size censoring and partially observed outbreaks in the likelihood, provides an R-based interface for outbreak size simulation, and is extensively tested via [`testthat`](https://testthat.r-lib.org/) [@wickham2011testthat].
-Like `estRodis`, `nbbp` is a Bayesian inference-focused package that leverages Stan and provides priors for $R$ and $k$, which by default are only weaky informative.
-
-Uniquely, `nbbp` provides flexible handling of large outbreaks, numerical safeguards for evaluating the censored probability mass of large outbreaks, and user control over numerical error when evaluating the probabilities of partially observed outbreaks.
-
-# Software design
-
-## Bayesian workflow
-
-`nbbp` uses [Stan](https://mc-Stan.org/) [@stan2026stan] for statistical inference, interfacing with R using [`Rstan`](https://mc-Stan.org/rstan/articles/rstan.html) [@stan2025rstan] and [`rstantools`](https://mc-Stan.org/rstantools/) [@gabry2026rstantools]. By providing standard `rstan` outputs, `nbbp` can be integrated into larger epidemiological analyses using this mature Bayesian software ecosystem. `nbbp`'s design is modular, enabling the addition of new models (e.g., extensions to time-series or geospatial modeling) that leveraging the underlying Stan codebase with minimal architecture changes.
-
-## Support for censoring, partially observed outbreaks, and non-extinction
-
-`nbbp` implements the the log-likelihood for a given dataset as:
+Accordingly, `nbbp` implements the log-likelihood for a given dataset as:
 
 $$
 \begin{aligned}
@@ -105,8 +112,8 @@ $$
 \text{Pr}(c \geq C \mid R, k) = 1 - \sum_{c=0}^{C-1} \text{Pr}(c \mid R, k)
 $$
 
-In implementing censoring, we discovered numerical instabilities in the probability mass function, which led to cumulative distribution function values that exceeded 1 (but by no more than about $10^{-12}$).
-`nbbp` implements two numerical safeguards that ensure bounded cumulative distribution function values.
+In implementing censoring, we discovered numerical instabilities in the probability mass function, which led to the RHS evaluating to less than 0 (but no smaller than about $-10^{-12}$).
+`nbbp` implements a hard safeguard to ensure the RHS is strictly nonnegative, and a soft safeguard to reduce the usage of the hard safeguard.
 
 The probabilities for partially observed outbreaks are defined as per @blumberg2013comparing:
 
@@ -115,7 +122,7 @@ $$
 $$
 
 where $\text{Pr}(c \mid x, p)$, the probability of observing $c$ cases given the true size $x$, is binomially distributed.
-These infinite sums in practice converge within reasonable tolerances. The package documentation describes optimizations that achieve small, user-specified tolerances at acceptable computational cost.
+Practically, these infinite sums converge within reasonable tolerances. The package documentation describes optimizations that achieve small, user-specified tolerances at acceptable computational cost.
 
 The probability $\text{Pr}(\mathcal{E} \mid R, k)$ is calculated using traditional branching process theory, derived by @nishiura2012estimating.
 
@@ -130,12 +137,7 @@ The probability $\text{Pr}(\mathcal{E} \mid R, k)$ is calculated using tradition
 
 # Research impact
 
-`nbbp` is an "off the shelf" analysis tool that enables rapid analysis of certain kinds of data common to infectious disease epidemiology.
-For example, from 2015 to 2023, 6 cases of Borealpox were identified without no evidence of onward, person-to-person transmission [@mooring2025six]. Because all observed "outbreaks" were size one, the likelihood surface is pathological, and traditional maximum likelihood analyses are fraught. `nbbp` provides robust posteriors for this data set and enables analyses of the sensitivity of posteriors to prior assumptions.
-
-`nbbp`'s likelihood surface visualization clarifies the need for Bayesian analysis.
-For example, most datasets included in `nbbp` have likelihood surfaces with minimal curvature with respect to $k$, and the `pneumonic_plauge` dataset has a multimodal likelihood surface.
-When only outbreaks of size one are present, as in the `borealpox` dataset, the likelihood surface converges to 1 for both $R = 0$ and $k = 0$.
+`nbbp` is an "off the shelf" analysis tool, enabling rapid analysis of final size data common to infectious disease epidemiology and providing both information and tools for judging the trustworthiness of the results.
 
 # AI usage disclosure
 
