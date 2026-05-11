@@ -118,7 +118,7 @@ $$
 
 As such, the rescaled CDF is safely less than one.
 In practice, we use Stan's [`machine_precision()`](https://mc-Stan.org/docs/Stan-users-guide/floating-point.html) for $\epsilon$.
-Note that given the modularly implemented, multipartite likelihood, $\widetilde{\mathrm{Pr}}$ is only used in the portions of the likelihood involving the CDF of completely observed outbreaks (i.e., censoring and size-conditioning).
+Note that due to the implementation of the likelihood in Stan, $\widetilde{\mathrm{Pr}}$ is only used for likelihoods of (completely observed) censored and size-conditioned outbreaks, not partially-observed outbreaks.
 
 ## Incompletely observed chains
 
