@@ -91,7 +91,7 @@ In total, it ecognizes four kinds of observed chain sizes as input:
 1. **Partially observed and extinct**. Each case in the outbreak has an independent probability $p$ of being observed, and $c$ cases are observed.
 1. An **explosion**, that is, an outbreak that grew (or would have grown) to infinite size.
 
-Accordingly, `nbbp` implements the log-likelihood for a given dataset as:
+Accordingly, `nbbp`'s implementation of the log-likelihood for a given dataset can be written as:
 
 $$
 \begin{aligned}
