@@ -69,21 +69,21 @@ data {
   /* Data */
   real<lower=0.0> dim_non_extinct; // number of non-extinct chains
   int<lower=0> dim_pmf; // number of points at which we evaluate the PMF (for probabilities of uncensored chain sizes)
-  int pmf_points[dim_pmf]; // points at which we evaluate the PMF (sizes of uncensored finite chain sizes)
-  real pmf_exps[dim_pmf]; //  exponents on PMFs at each point (number of chains at this size)
+  array[dim_pmf] int pmf_points; // points at which we evaluate the PMF (sizes of uncensored finite chain sizes)
+  array[dim_pmf] real pmf_exps; //  exponents on PMFs at each point (number of chains at this size)
   int<lower=0> dim_ccdf; // number of points at which we evaluate the complement of the CDF (1 - CDF(x), for probabilities of censored chain sizes and conditioning on sampling chains of at least a certain size)
-  int ccdf_points[dim_ccdf]; // points at which we evaluate the CCDF (sizes of censored chains and conditioned likelihoods)
-  real ccdf_exps[dim_ccdf]; //  exponents on CCDFs in the likelihood (# censored at this size - # observations which are conditioned to be >= this size)
+  array[dim_ccdf] int ccdf_points; // points at which we evaluate the CCDF (sizes of censored chains and conditioned likelihoods)
+  array[dim_ccdf] real ccdf_exps; //  exponents on CCDFs in the likelihood (# censored at this size - # observations which are conditioned to be >= this size)
   int<lower=0> max_partial; // maximum size to which we marginalize probabilities of partially-observed chains
   int<lower=0> dim_partial_probs; // number of distinct per-case observation probabilities
   int<lower=0> dim_partial_points; // number of distinct partially-observed chain sizes
   int<lower=0> dim_partial_exps; // number of (flattened) prob x size combos for which we compute likelihoods of partially observed chains
-  real<lower=0.0,upper=1.0> partial_probs[dim_partial_probs]; // the distinct per-case observation probabilities
-  real<lower=0.0> partial_cond_counts[dim_partial_probs]; // the number of chains at each sampling probability, used to condition the likelihood on observing chains
-  int<lower=0> partial_points[dim_partial_points]; // the distinct partially-observed chain sizes
-  real<lower=0.0> partial_exps[dim_partial_exps]; // numbers of times we see each (flattened) prob x size combos for partially-observed chains
-  int<lower=1,upper=dim_partial_points> partial_point_indices[dim_partial_exps]; // for each combo, which entry in partial_probs is its probability?
-  int<lower=1,upper=dim_partial_probs> partial_prob_indices[dim_partial_exps]; // for each combo, which entry in partial_points is its chain size?
+  array[dim_partial_probs] real<lower=0.0,upper=1.0> partial_probs; // the distinct per-case observation probabilities
+  array[dim_partial_probs] real<lower=0.0> partial_cond_counts; // the number of chains at each sampling probability, used to condition the likelihood on observing chains
+  array[dim_partial_points] int<lower=0> partial_points; // the distinct partially-observed chain sizes
+  array[dim_partial_exps] real<lower=0.0> partial_exps; // numbers of times we see each (flattened) prob x size combos for partially-observed chains
+  array[dim_partial_exps] int<lower=1,upper=dim_partial_points> partial_point_indices; // for each combo, which entry in partial_probs is its probability?
+  array[dim_partial_exps] int<lower=1,upper=dim_partial_probs> partial_prob_indices; // for each combo, which entry in partial_points is its chain size?
 
   /* Hyperpriors */
   real<lower=0.0> shape_r_eff;
